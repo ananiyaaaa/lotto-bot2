@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: ethiopia-lucky-star-demo
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: DEMO_MODE
+        value: "true"
+      - key: PAYMENTS_ENABLED
+        value: "false"
+      - key: DATABASE_PATH
+        value: /opt/render/project/src/lucky_star.db
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: WEBAPP_URL
+        sync: false
