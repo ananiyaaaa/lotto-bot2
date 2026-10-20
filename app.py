@@ -217,9 +217,10 @@ async def api_me(request: Request):
     }
 
 
+
 class TicketInput(BaseModel):
     game_id: str = Field(min_length=1, max_length=24)
-    digits: list[int] = Field(min_length=1, max_length=6)
+    digits: list[int] = Field(min_length=6, max_length=6)
 
 
 @app.post("/api/demo-ticket")
@@ -227,33 +228,44 @@ async def demo_ticket(body: TicketInput, request: Request):
     _, player = registered_player(request)
 
     if body.game_id not in GAMES:
-        raise HTTPException(422, "Unknown game.")
-   if len(body.digits) != 6:
-    raise HTTPException(422, "Enter exactly six digits.")
+        raise HTTPException(status_code=422, detail="Unknown game.")
 
-if any(n < 0 or n > 9 for n in body.digits):
-    raise HTTPException(422, "Digits must be from 0 to 9.")
+    if len(body.digits) != 6:
+        raise HTTPException(
+            status_code=422,
+            detail="Enter exactly six digits."
+        )
+
+    if any(n < 0 or n > 9 for n in body.digits):
+        raise HTTPException(
+            status_code=422,
+            detail="Digits must be from 0 to 9."
+        )
 
     ticket_id = "DEMO-" + secrets.token_hex(4).upper()
+
     with connect_db() as conn:
-        conn.execute("""
+        conn.execute(
+            """
             INSERT INTO demo_tickets
-            (ticket_id, telegram_id, game_id, digits_json, created_at)
+                (ticket_id, telegram_id, game_id, digits_json, created_at)
             VALUES (?, ?, ?, ?, ?)
-        """, (
-            ticket_id,
-            player["telegram_id"],
-            body.game_id,
-            json.dumps(sorted(body.digits)),
-            int(time.time())
-        ))
+            """,
+            (
+                ticket_id,
+                player["telegram_id"],
+                body.game_id,
+                json.dumps(body.digits),
+                int(time.time()),
+            ),
+        )
 
     return {
         "ok": True,
         "ticket_id": ticket_id,
         "message": "Demo ticket saved. No payment taken.",
         "mode": "DEMO",
-        "payments_enabled": False
+        "payments_enabled": False,
     }
 
 
