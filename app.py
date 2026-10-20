@@ -228,10 +228,11 @@ async def demo_ticket(body: TicketInput, request: Request):
 
     if body.game_id not in GAMES:
         raise HTTPException(422, "Unknown game.")
-    if any(n < 1 or n > 9 for n in body.digits):
-        raise HTTPException(422, "Digits must be from 1 to 9.")
-    if len(set(body.digits)) != len(body.digits):
-        raise HTTPException(422, "Digits must be unique.")
+   if len(body.digits) != 6:
+    raise HTTPException(422, "Enter exactly six digits.")
+
+if any(n < 0 or n > 9 for n in body.digits):
+    raise HTTPException(422, "Digits must be from 0 to 9.")
 
     ticket_id = "DEMO-" + secrets.token_hex(4).upper()
     with connect_db() as conn:
