@@ -1,4 +1,6 @@
-
+from pathlib import Path
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 import os
 import json
 import hmac
@@ -13,7 +15,13 @@ from fastapi import FastAPI, Request, HTTPException
 from pydantic import BaseModel, Field
 
 app = FastAPI(title="Ethiopia Lucky Star")
+STATIC_DIR = Path(__file__).resolve().parent / "static"
 
+app.mount(
+    "/static",
+    StaticFiles(directory=str(STATIC_DIR)),
+    name="static"
+)
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
 WEB_APP_URL = os.getenv(
     "WEB_APP_URL",
@@ -176,14 +184,17 @@ def register_user(user):
         ).fetchone())
 
 
-@app.get("/")
+@app.get("/", include_in_schema=False)
 async def home():
-    return {
-        "ok": True,
-        "service": "Ethio Lottery",
-        "mode": "DEMO",
-        "payments_enabled": False
-    }
+    index_file = STATIC_DIR / "index.html"
+
+    if not index_file.is_file():
+        raise HTTPException(
+            status_code=404,
+            detail="Game page missing: static/index.html"
+        )
+
+    return FileResponse(str(index_file))
 
 
 @app.get("/health")
