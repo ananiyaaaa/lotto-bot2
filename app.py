@@ -19,7 +19,7 @@ WEB_APP_URL = os.getenv(
     "WEB_APP_URL",
     "https://ethio-lottery-demo.onrender.com"
 ).rstrip("/")
-DATABASE_PATH = os.getenv("DATABASE_PATH", "/tmp/lucky_star.db")
+DATABASE_PATH = "/tmp/lucky_star.db"
 WEBHOOK_SECRET = os.getenv("TELEGRAM_WEBHOOK_SECRET_TOKEN", "")
 
 GAMES = {"daily", "weekly", "monthly", "holiday", "jemaw", "lebet"}
