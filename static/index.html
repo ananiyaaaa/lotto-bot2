@@ -1,861 +1,149 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#124734">
-  <title>Ethiopia Lucky Star</title>
-
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-  <style>
-    :root {
-      --green: #124734;
-      --green2: #1c6547;
-      --gold: #f0c44b;
-      --cream: #fffaf0;
-      --muted: #718078;
-      --border: #e7e2d4;
-      --white: #ffffff;
-      --red: #c84d43;
-    }
-
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      font-family: Arial, Helvetica, sans-serif;
-      background: #f3f5ef;
-      color: #173c2d;
-    }
-
-    button, input, select { font: inherit; }
-
-    button { cursor: pointer; }
-
-    .app {
-      width: 100%;
-      max-width: 1080px;
-      min-height: 100vh;
-      margin: 0 auto;
-      background: #f7f8f3;
-    }
-
-    .topbar {
-      background: var(--green);
-      color: white;
-      padding: 20px 22px;
-      border-bottom: 4px solid var(--gold);
-    }
-
-    .brand-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .logo {
-      width: 49px;
-      height: 49px;
-      border-radius: 15px;
-      display: grid;
-      place-items: center;
-      color: var(--green);
-      background: var(--gold);
-      font-size: 27px;
-      font-weight: 900;
-    }
-
-    .brand h1 {
-      margin: 0;
-      font-size: 20px;
-      line-height: 1.2;
-    }
-
-    .brand p {
-      margin: 5px 0 0;
-      font-size: 12px;
-      color: #d8e7dc;
-    }
-
-    .demo-badge {
-      color: #173c2d;
-      background: var(--gold);
-      font-size: 11px;
-      font-weight: 900;
-      padding: 8px 10px;
-      border-radius: 20px;
-      white-space: nowrap;
-    }
-
-    .hero {
-      margin: 16px;
-      padding: 23px 20px;
-      border-radius: 20px;
-      color: white;
-      background:
-        radial-gradient(circle at 90% 10%, #4a805b 0, transparent 34%),
-        linear-gradient(130deg, #124734, #1b6547);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .hero::after {
-      content: "✦";
-      position: absolute;
-      right: 18px;
-      bottom: -30px;
-      font-size: 145px;
-      color: #ffffff12;
-    }
-
-    .hero .eyebrow {
-      color: var(--gold);
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      font-size: 10px;
-      font-weight: bold;
-    }
-
-    .hero h2 {
-      font-size: clamp(24px, 5vw, 35px);
-      margin: 12px 0 8px;
-      line-height: 1.12;
-      max-width: 500px;
-    }
-
-    .hero p {
-      color: #e0ebe2;
-      font-size: 13px;
-      line-height: 1.6;
-      max-width: 500px;
-      margin: 0;
-    }
-
-    .section {
-      padding: 5px 16px 17px;
-    }
-
-    .section-heading {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 12px;
-    }
-
-    .section-heading h2 {
-      font-size: 18px;
-      margin: 0;
-    }
-
-    .section-heading span {
-      color: var(--muted);
-      font-size: 11px;
-    }
-
-    .game-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
-    }
-
-    .game-card {
-      position: relative;
-      text-align: left;
-      padding: 15px 12px;
-      border: 2px solid var(--border);
-      border-radius: 15px;
-      background: white;
-      color: #173c2d;
-      min-width: 0;
-      transition: border-color .15s, transform .15s;
-    }
-
-    .game-card:active { transform: scale(.98); }
-
-    .game-card.selected {
-      border-color: var(--green);
-      background: #f0f7ef;
-      box-shadow: 0 0 0 1px var(--green);
-    }
-
-    .game-icon {
-      width: 37px;
-      height: 37px;
-      border-radius: 12px;
-      display: grid;
-      place-items: center;
-      background: #edf3e8;
-      font-size: 20px;
-      margin-bottom: 11px;
-    }
-
-    .game-card strong {
-      display: block;
-      font-size: 14px;
-      line-height: 1.35;
-      margin-bottom: 5px;
-    }
-
-    .game-card .price {
-      display: block;
-      font-size: 12px;
-      color: var(--green2);
-      font-weight: bold;
-    }
-
-    .game-card small {
-      display: block;
-      color: var(--muted);
-      font-size: 10px;
-      margin-top: 7px;
-      line-height: 1.4;
-    }
-
-    .selected-mark {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      width: 19px;
-      height: 19px;
-      display: none;
-      place-items: center;
-      border-radius: 50%;
-      background: var(--green);
-      color: white;
-      font-size: 12px;
-    }
-
-    .game-card.selected .selected-mark { display: grid; }
-
-    .ticket-panel {
-      margin: 0 16px 18px;
-      padding: 20px 16px;
-      border-radius: 20px;
-      border: 1px solid var(--border);
-      background: white;
-      box-shadow: 0 5px 20px #123c2710;
-    }
-
-    .ticket-title {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 10px;
-    }
-
-    .ticket-title h2 {
-      margin: 0;
-      font-size: 19px;
-    }
-
-    .ticket-title p {
-      margin: 6px 0 0;
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.5;
-    }
-
-    .ticket-label {
-      padding: 7px 9px;
-      border-radius: 9px;
-      background: #fff4ce;
-      color: #765b13;
-      font-size: 10px;
-      font-weight: bold;
-      white-space: nowrap;
-    }
-
-    .selected-game-name {
-      margin: 17px 0 9px;
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    .digit-boxes {
-      display: flex;
-      justify-content: center;
-      gap: 7px;
-      margin: 14px 0;
-    }
-
-    .digit {
-      width: 48px;
-      height: 59px;
-      min-width: 0;
-      padding: 0;
-      border: 2px solid #d9dfd6;
-      border-radius: 11px;
-      background: #fbfcf8;
-      color: var(--green);
-      text-align: center;
-      font-size: 25px;
-      font-weight: 800;
-      outline: none;
-      caret-color: var(--green);
-    }
-
-    .digit:focus {
-      border-color: var(--green);
-      background: #f1f7ed;
-      box-shadow: 0 0 0 3px #12473414;
-    }
-
-    .digit.filled { border-color: #a5c1a5; }
-
-    .digit-help {
-      text-align: center;
-      font-size: 11px;
-      color: var(--muted);
-      margin: 0 0 16px;
-    }
-
-    .button-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 9px;
-    }
-
-    .btn {
-      border: 0;
-      padding: 13px 12px;
-      border-radius: 11px;
-      font-size: 13px;
-      font-weight: bold;
-    }
-
-    .btn-primary {
-      background: var(--green);
-      color: white;
-    }
-
-    .btn-secondary {
-      background: #edf2e9;
-      color: var(--green);
-    }
-
-    .btn:disabled {
-      cursor: not-allowed;
-      opacity: .55;
-    }
-
-    .ticket-summary {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      border-top: 1px dashed var(--border);
-      padding-top: 14px;
-      margin-top: 16px;
-      font-size: 12px;
-    }
-
-    .ticket-summary span { color: var(--muted); }
-
-    .ticket-summary strong { color: var(--green); }
-
-    .message {
-      margin-top: 13px;
-      padding: 12px;
-      border-radius: 10px;
-      font-size: 12px;
-      line-height: 1.5;
-      display: none;
-      overflow-wrap: anywhere;
-    }
-
-    .message.show { display: block; }
-
-    .message.success {
-      background: #e8f6e8;
-      color: #205a2c;
-    }
-
-    .message.error {
-      background: #fff0ed;
-      color: #9e342c;
-    }
-
-    .message.info {
-      background: #edf3fa;
-      color: #315778;
-    }
-
-    .history-panel {
-      margin: 0 16px 18px;
-      padding: 18px 16px;
-      border-radius: 18px;
-      background: white;
-      border: 1px solid var(--border);
-    }
-
-    .history-panel h2 {
-      margin: 0 0 13px;
-      font-size: 17px;
-    }
-
-    .empty-history {
-      padding: 17px 10px;
-      border-radius: 12px;
-      text-align: center;
-      background: #f7f8f3;
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.6;
-    }
-
-    .history-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 12px 0;
-      border-bottom: 1px solid #eef0e9;
-      font-size: 12px;
-    }
-
-    .history-item:last-child { border-bottom: 0; }
-
-    .history-number {
-      font-size: 16px;
-      font-weight: 800;
-      letter-spacing: 2px;
-      color: var(--green);
-    }
-
-    .history-item small {
-      display: block;
-      margin-top: 4px;
-      color: var(--muted);
-    }
-
-    .history-tag {
-      padding: 6px 8px;
-      border-radius: 8px;
-      background: #fff3cd;
-      color: #765b13;
-      font-size: 10px;
-      font-weight: bold;
-    }
-
-    .rules {
-      margin: 0 16px 18px;
-      padding: 17px;
-      border-radius: 16px;
-      background: #edf2e9;
-    }
-
-    .rules h3 {
-      font-size: 14px;
-      margin: 0 0 9px;
-    }
-
-    .rules ul {
-      margin: 0;
-      padding-left: 19px;
-      font-size: 12px;
-      line-height: 1.8;
-      color: #52685a;
-    }
-
-    .footer {
-      background: var(--green);
-      color: #d7e4d9;
-      padding: 22px 18px;
-      text-align: center;
-      font-size: 11px;
-      line-height: 1.8;
-    }
-
-    .footer strong { color: var(--gold); }
-
-    @media (min-width: 700px) {
-      .topbar { padding: 24px 32px; }
-      .hero { margin: 24px; padding: 32px; }
-      .section { padding: 5px 24px 22px; }
-      .game-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-      .ticket-panel, .history-panel, .rules {
-        margin-left: 24px;
-        margin-right: 24px;
-      }
-      .ticket-panel { padding: 26px; }
-      .digit { width: 58px; height: 66px; font-size: 28px; }
-    }
-
-    @media (max-width: 370px) {
-      .topbar { padding: 16px 13px; }
-      .brand h1 { font-size: 17px; }
-      .logo { width: 42px; height: 42px; }
-      .demo-badge { font-size: 9px; padding: 7px; }
-      .hero { margin: 12px; padding: 19px 15px; }
-      .section { padding-left: 12px; padding-right: 12px; }
-      .ticket-panel, .history-panel, .rules {
-        margin-left: 12px;
-        margin-right: 12px;
-      }
-      .digit-boxes { gap: 5px; }
-      .digit { width: calc((100% - 25px) / 6); height: 52px; font-size: 22px; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#073d2c">
+<title>Ethiopia Lucky Star</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--green:#073d2c;--green2:#0c5a3e;--gold:#f6c453;--gold2:#ffe8a3;--cream:#fff9e9;--ink:#102b22;--muted:#a8c6b8;--panel:rgba(255,255,255,.075);--line:rgba(255,232,163,.18);--red:#ff7777}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 80% 0%,#176a49 0,transparent 35%),radial-gradient(circle at 0% 40%,#104a37 0,transparent 30%),var(--green);color:var(--cream);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;min-height:100vh;overflow-x:hidden}button,input{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-offset:3px}.app{width:min(100%,1050px);margin:auto;padding:16px 16px calc(90px + env(safe-area-inset-bottom))}.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}.brand{display:flex;align-items:center;gap:10px;border:0;background:none;color:inherit;text-align:left;padding:0}.logo{width:44px;height:44px;border-radius:15px;display:grid;place-items:center;background:linear-gradient(145deg,#ffe7a0,#d89c25);color:#17432f;font-size:25px;box-shadow:0 6px 25px #f6c45333}.brand strong{display:block;font-size:16px;letter-spacing:.3px}.brand small{color:#c6d9c9;font-size:11px;letter-spacing:1.4px;text-transform:uppercase}.mode{font-size:11px;font-weight:900;letter-spacing:.8px;color:#ffedb3;border:1px solid #f6c45366;background:#f6c45315;border-radius:999px;padding:8px 11px;white-space:nowrap}.screen{display:none;animation:screenIn .35s ease both}.screen.active{display:block}@keyframes screenIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}.hero{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:27px;padding:26px 22px;background:linear-gradient(135deg,#126345,#07402e 65%,#092f25);box-shadow:0 18px 45px #001b1433;margin-bottom:22px;isolation:isolate}.hero:before{content:"";position:absolute;width:230px;height:230px;right:-70px;top:-95px;border-radius:50%;background:radial-gradient(circle,#f6c45335,transparent 68%);z-index:-1}.eyebrow{font-size:11px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:var(--gold2)}h1,h2,h3,p{margin-top:0}h1{font-size:clamp(28px,6vw,43px);line-height:1.08;margin:10px 0 12px;max-width:600px;letter-spacing:-1.2px}h2{font-size:25px;margin-bottom:7px}h3{font-size:16px;margin-bottom:7px}.sub{color:#d0e3d7;line-height:1.55;font-size:14px;max-width:570px}.hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}.btn{border:0;border-radius:14px;padding:13px 16px;font-weight:850;transition:transform .18s,filter .18s,box-shadow .18s}.btn:hover{transform:translateY(-2px);filter:brightness(1.05)}.btn:active{transform:scale(.98)}.primary{background:linear-gradient(135deg,#ffe7a0,#e7ad34);color:#153c2c;box-shadow:0 7px 22px #e7ad3433}.secondary{background:#ffffff10;border:1px solid #ffffff24;color:var(--cream)}.ghost{background:transparent;border:1px solid var(--line);color:var(--gold2)}.danger{background:#ff77771a;color:#ffd1d1;border:1px solid #ff777744}.full{width:100%}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.game-card{position:relative;overflow:hidden;text-align:left;color:var(--cream);border:1px solid var(--line);border-radius:20px;background:linear-gradient(145deg,#ffffff12,#ffffff06);padding:15px;min-height:164px;transition:transform .2s,border-color .2s,background .2s}.game-card:hover{transform:translateY(-4px);border-color:#f6c45399;background:#ffffff13}.game-card:after{content:"";position:absolute;width:100px;height:100px;right:-32px;bottom:-38px;border-radius:50%;background:radial-gradient(circle,#f6c45322,transparent 70%)}.ball{width:47px;height:47px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 32% 25%,#fff5c6,#f6c453 43%,#a96d12 100%);color:#24452f;font-size:21px;font-weight:1000;box-shadow:inset -4px -5px 10px #7a4b2233,0 5px 16px #f6c4532b;animation:float 3.2s ease-in-out infinite}.game-card:nth-child(2n) .ball{animation-delay:-1.3s}.game-card:nth-child(3n) .ball{animation-delay:-2s}@keyframes float{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-7px) rotate(5deg)}}.game-title{font-weight:900;font-size:16px;margin-top:12px}.meta{font-size:12px;color:#c2d9ca;margin-top:5px;line-height:1.45}.price{color:var(--gold2);font-weight:850;font-size:13px;margin-top:8px}.section-head{display:flex;justify-content:space-between;align-items:end;gap:12px;margin:25px 0 13px}.section-head p{font-size:12px;color:var(--muted);margin:0}.account-card,.panel{border:1px solid var(--line);border-radius:22px;background:var(--panel);padding:20px;margin-bottom:14px}.auth-wrap{max-width:460px;margin:5vh auto 0}.auth-visual{text-align:center;padding:12px 0 22px}.big-logo{font-size:48px;filter:drop-shadow(0 8px 15px #f6c45333);animation:float 3s infinite}.auth-visual h1{font-size:34px;margin:8px auto}.field{display:block;margin:14px 0}.field span{display:block;color:#d8e7dd;font-size:12px;font-weight:800;margin-bottom:7px}.field input{width:100%;background:#062f24;border:1px solid #ffffff20;border-radius:13px;color:white;padding:14px 13px;min-height:48px}.field input::placeholder{color:#759a88}.pin-input{letter-spacing:12px;font-size:24px;text-align:center;font-weight:900}.auth-switch{text-align:center;color:#b8d2c3;font-size:13px;margin:15px 0 0}.text-button{background:none;border:0;color:var(--gold2);font-weight:900;padding:4px}.notice{padding:12px 14px;border-radius:13px;background:#f6c45313;border:1px solid #f6c45335;color:#ffedb8;font-size:12px;line-height:1.5;margin:12px 0}.message{display:none;padding:12px;border-radius:12px;margin:10px 0;font-size:13px;line-height:1.4}.message.show{display:block}.message.error{background:#ff77771a;color:#ffd4d4;border:1px solid #ff777744}.message.ok{background:#80e2ad17;color:#bfffd5;border:1px solid #80e2ad44}.back{display:inline-flex;align-items:center;gap:7px;background:none;border:0;color:var(--gold2);font-weight:850;padding:8px 0 16px}.game-hero{display:flex;align-items:center;gap:15px}.game-hero .ball{width:64px;height:64px;font-size:29px;flex-shrink:0}.game-hero h1{font-size:29px;margin:5px 0}.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:16px 0}.stat{padding:14px;border:1px solid var(--line);border-radius:15px;background:#ffffff08}.stat small{display:block;color:#b5d1c1;font-size:11px;margin-bottom:5px}.stat strong{font-size:17px;color:var(--gold2)}.digits{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px;margin:17px 0}.digit{width:100%;min-width:0;aspect-ratio:.82;border-radius:13px;border:1px solid #f6c45366;background:linear-gradient(160deg,#fff2bd,#f6c453 54%,#d89522);color:#17432f;text-align:center;font-size:clamp(20px,6vw,29px);font-weight:1000;box-shadow:inset 0 2px 5px #fff9d9,0 5px 14px #0002;transition:transform .2s}.digit:focus{transform:translateY(-4px)}.ticket-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}.ticket-list{display:grid;gap:10px}.ticket{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px;border-radius:15px;background:#ffffff09;border:1px solid var(--line)}.ticket-number{display:flex;gap:4px;flex-wrap:wrap;margin:6px 0}.mini-digit{display:inline-grid;place-items:center;min-width:24px;height:30px;padding:0 4px;border-radius:7px;background:#f6c453;color:#173e2d;font-weight:1000;font-size:13px}.ticket small{display:block;color:#b7d2c1;font-size:11px}.ticket strong{font-size:13px}.empty{text-align:center;color:#b7d2c1;padding:28px 10px}.empty .big-logo{font-size:34px}.bottom-nav{position:fixed;z-index:10;bottom:0;left:0;right:0;padding:9px 12px calc(9px + env(safe-area-inset-bottom));background:#062d23ed;backdrop-filter:blur(18px);border-top:1px solid #f6c45322;display:flex;justify-content:center}.nav-inner{width:min(100%,520px);display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.nav-btn{background:none;border:0;color:#9cbdab;border-radius:12px;padding:9px 4px;font-size:11px;font-weight:800}.nav-btn span{display:block;font-size:19px;margin-bottom:3px}.nav-btn.active{background:#f6c45319;color:var(--gold2)}.spark{position:fixed;z-index:-1;pointer-events:none;opacity:.55;animation:drift linear infinite;color:var(--gold2)}@keyframes drift{from{transform:translateY(110vh) rotate(0deg);opacity:0}10%{opacity:.55}90%{opacity:.45}to{transform:translateY(-15vh) rotate(360deg);opacity:0}}.confetti{position:fixed;top:-12px;z-index:20;width:7px;height:12px;pointer-events:none;animation:fall 1.6s ease-in forwards}@keyframes fall{to{transform:translateY(110vh) rotate(760deg);opacity:0}}.footer{text-align:center;color:#84a996;font-size:11px;padding:25px 0 4px}.hidden{display:none!important}.top-user{font-size:12px;color:#d2e4d8;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(min-width:700px){.app{padding:24px 24px 110px}.hero{padding:34px}.grid{grid-template-columns:repeat(4,minmax(0,1fr))}.game-card{min-height:190px;padding:18px}.game-card .ball{width:54px;height:54px}.game-hero h1{font-size:36px}.auth-wrap{margin-top:8vh}.ticket-layout{display:grid;grid-template-columns:1.1fr .9fr;gap:14px;align-items:start}}
+@media(max-width:360px){.app{padding-left:11px;padding-right:11px}.hero{padding:21px 17px}.grid{gap:8px}.game-card{padding:12px;min-height:155px}.digits{gap:4px}.digit{border-radius:9px}.ticket-actions{grid-template-columns:1fr}.mode{font-size:9px;padding:7px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition:none!important}}
+</style>
 </head>
-
 <body>
+<div id="decor" aria-hidden="true"></div>
 <div class="app">
-  <header class="topbar">
-    <div class="brand-row">
-      <div class="brand">
-        <div class="logo">★</div>
-        <div>
-          <h1>Ethiopia Lucky Star</h1>
-          <p>Your number. Your lucky star.</p>
-        </div>
-      </div>
-      <div class="demo-badge">DEMO MODE</div>
-    </div>
-  </header>
+<header class="topbar">
+  <button class="brand" onclick="go('home')" aria-label="Ethiopia Lucky Star home"><span class="logo">✦</span><span><strong>ETHIOPIA LUCKY STAR</strong><small>Dream • Play • Celebrate</small></span></button>
+  <div style="display:flex;align-items:center;gap:9px"><span id="topUser" class="top-user"></span><span class="mode">DEMO ONLY</span></div>
+</header>
 
-  <section class="hero">
-    <div class="eyebrow">🇪🇹 Ethiopian Lottery Experience</div>
-    <h2>Choose your six lucky digits.</h2>
-    <p>Select a game, enter six digits from 0 to 9, and save a demo ticket. No money is collected and no real prize is awarded.</p>
-  </section>
+<section id="welcome" class="screen active">
+ <div class="auth-wrap">
+  <div class="auth-visual"><div class="big-logo">🌟</div><div class="eyebrow">Your lucky moment starts here</div><h1>Welcome to<br><span style="color:var(--gold2)">Lucky Star</span></h1><p class="sub" style="margin:auto">Explore Ethiopian-inspired lottery games, choose your six digits, and collect demo tickets.</p></div>
+  <div class="account-card">
+   <div class="hero-actions" style="margin-top:0"><button class="btn primary full" onclick="showAuth('signup')">✨ Create an account</button><button class="btn secondary full" onclick="showAuth('login')">🔐 Log in with PIN</button></div>
+   <div class="notice">DEMO mode: no deposits, withdrawals, or real-money payments. Demo tickets have no cash value.</div>
+  </div>
+ </div>
+</section>
 
-  <main>
-    <section class="section">
-      <div class="section-heading">
-        <h2>Choose a game</h2>
-        <span>8 games</span>
-      </div>
-      <div class="game-grid" id="gameGrid"></div>
-    </section>
+<section id="auth" class="screen">
+ <button class="back" onclick="go('welcome')">← Back</button>
+ <div class="auth-wrap" style="margin-top:0">
+  <div class="auth-visual"><div class="big-logo">🌟</div><h1 id="authTitle">Create your account</h1><p id="authDescription" class="sub" style="margin:auto">Create your player profile.</p></div>
+  <form id="authForm" class="account-card">
+   <div id="nameWrap" class="field"><span>PLAYER NAME</span><input id="playerName" autocomplete="name" maxlength="60" placeholder="Enter your name"></div>
+   <div id="phoneWrap" class="field"><span>PHONE NUMBER (OPTIONAL)</span><input id="playerPhone" autocomplete="tel" inputmode="tel" maxlength="24" placeholder="+251..."></div>
+   <label class="field"><span>4-DIGIT PIN</span><input id="playerPin" class="pin-input" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="current-password" placeholder="••••" required></label>
+   <div id="confirmWrap" class="field"><span>CONFIRM 4-DIGIT PIN</span><input id="confirmPin" class="pin-input" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="new-password" placeholder="••••"></div>
+   <div id="authMessage" class="message" role="status"></div>
+   <button id="authSubmit" class="btn primary full" type="submit">Create demo account</button>
+   <p class="auth-switch"><span id="switchText">Already registered?</span> <button type="button" class="text-button" id="switchAuth" onclick="toggleAuth()">Log in</button></p>
+   <div class="notice">Your PIN is sent to the server over HTTPS for verification. Do not reuse your banking PIN. Backend PIN hashing and rate limits must be implemented before production use.</div>
+  </form>
+ </div>
+</section>
 
-    <section class="ticket-panel">
-      <div class="ticket-title">
-        <div>
-          <h2>Build your ticket</h2>
-          <p>Enter a six-digit number. Repeated digits and leading zeros are allowed.</p>
-        </div>
-        <div class="ticket-label">6 DIGITS</div>
-      </div>
+<section id="home" class="screen">
+ <div class="hero">
+  <div class="eyebrow">🇪🇹 Made for the spirit of Ethiopia</div>
+  <h1>Ready to find<br>your <span style="color:var(--gold2)">lucky numbers?</span></h1>
+  <p class="sub">Pick a game, choose your six digits, and build your personal demo ticket collection.</p>
+  <div class="hero-actions"><button class="btn primary" onclick="go('games')">Explore games ✨</button><button class="btn secondary" onclick="go('tickets')">🎟 My tickets <span id="ticketCountBadge"></span></button></div>
+  <div style="display:flex;gap:10px;align-items:center;margin-top:22px"><div class="ball">7</div><div class="ball" style="animation-delay:-.7s">3</div><div class="ball" style="animation-delay:-1.5s">9</div><div style="font-size:12px;color:#d1e4d7;line-height:1.5">Your numbers. Your game.<br><b style="color:var(--gold2)">Just for fun — demo mode.</b></div></div>
+ </div>
+ <div class="section-head"><div><h2>Choose your game</h2><p>Tap a card to open its own game page.</p></div><button class="text-button" onclick="go('games')">See all →</button></div>
+ <div id="homeGames" class="grid"></div>
+</section>
 
-      <div class="selected-game-name">
-        Selected game: <strong id="selectedGameName">Daily Loto</strong>
-      </div>
+<section id="games" class="screen">
+ <div class="section-head" style="margin-top:5px"><div><div class="eyebrow">The game hall</div><h2>All lottery games</h2><p>Choose a game to see its own details and ticket builder.</p></div></div>
+ <div id="allGames" class="grid"></div>
+</section>
 
-      <div class="digit-boxes" id="digitBoxes" aria-label="Six digit lottery number">
-        <input class="digit" type="text" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 1" autocomplete="off">
-        <input class="digit" type="text" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 2" autocomplete="off">
-        <input class="digit" type="text" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 3" autocomplete="off">
-        <input class="digit" type="text" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 4" autocomplete="off">
-        <input class="digit" type="text" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 5" autocomplete="off">
-        <input class="digit" type="text" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 6" autocomplete="off">
-      </div>
+<section id="gamePage" class="screen">
+ <button class="back" onclick="go('games')">← All games</button>
+ <div id="gameDetails"></div>
+</section>
 
-      <p class="digit-help">Tap a box to enter a digit. Use Random Number to fill all six boxes.</p>
+<section id="tickets" class="screen">
+ <div class="section-head" style="margin-top:5px"><div><div class="eyebrow">Your collection</div><h2>My demo tickets 🎟</h2><p>Tickets saved to this browser and server when available.</p></div></div>
+ <div id="ticketsList" class="ticket-list"></div>
+ <div class="notice">These are demo tickets only. No payment has been taken and no prize is guaranteed.</div>
+</section>
 
-      <div class="button-row">
-        <button class="btn btn-secondary" type="button" id="randomBtn">🎲 Random Number</button>
-        <button class="btn btn-primary" type="button" id="saveBtn">Save Demo Ticket</button>
-      </div>
-
-      <div class="ticket-summary">
-        <span>Ticket price (display only)</span>
-        <strong id="ticketPrice">100 ETB</strong>
-      </div>
-
-      <div class="message" id="ticketMessage" role="status" aria-live="polite"></div>
-    </section>
-
-    <section class="history-panel">
-      <h2>My demo tickets</h2>
-      <div id="ticketHistory">
-        <div class="empty-history">Your saved demo tickets will appear here.<br>Open this game through Telegram to register and save tickets to the server.</div>
-      </div>
-    </section>
-
-    <section class="rules">
-      <h3>How demo play works</h3>
-      <ul>
-        <li>Each ticket number contains exactly six digits from 0 to 9.</li>
-        <li>Numbers such as 000007 and 112233 are valid.</li>
-        <li>Daily Loto closes at 6:00 PM Ethiopia time as the planned rule.</li>
-        <li>Weekly Loto is planned for Sunday; Monthly Loto is planned for a monthly draw.</li>
-        <li>Holiday Loto and the other games are shown for demonstration.</li>
-        <li>All ticket submissions are demo-only. No payments, live draws, or real prizes are enabled.</li>
-      </ul>
-    </section>
-  </main>
-
-  <footer class="footer">
-    <strong>ETHIOPIA LUCKY STAR</strong><br>
-    Demo version · Payments disabled<br>
-    This demo does not sell lottery tickets or award real prizes.
-  </footer>
+<section id="profile" class="screen">
+ <div class="hero"><div class="eyebrow">Player account</div><h1>Your Lucky Star<br><span style="color:var(--gold2)">profile</span></h1><p class="sub">Manage this device's demo session.</p></div>
+ <div class="panel"><h3 id="profileName">Player</h3><p id="profileInfo" class="sub">Demo player profile</p><div class="notice">For security, never share your PIN. A browser-only demo session is not a secure account system; use the backend auth endpoints before launch.</div><button class="btn secondary full" onclick="logout()">Log out</button></div>
+</section>
+<div class="footer">ETHIOPIA LUCKY STAR • DEMO MODE • NO REAL-MONEY PAYMENTS</div>
 </div>
 
+<nav id="bottomNav" class="bottom-nav hidden" aria-label="Main navigation"><div class="nav-inner">
+ <button class="nav-btn active" data-screen="home" onclick="go('home')"><span>🏠</span>Home</button>
+ <button class="nav-btn" data-screen="games" onclick="go('games')"><span>🎱</span>Games</button>
+ <button class="nav-btn" data-screen="tickets" onclick="go('tickets')"><span>🎟️</span>My Tickets</button>
+</div></nav>
+
 <script>
-(() => {
-  "use strict";
-
-  const tg = window.Telegram?.WebApp;
-  if (tg) {
-    tg.ready();
-    tg.expand();
-  }
-
-  const API_BASE = window.location.origin;
-
-  const games = [
-    { id: "daily", name: "Daily Loto", icon: "☀️", price: 100, prize: "30,000 ETB", note: "Planned close: 6 PM" },
-    { id: "weekly", name: "Weekly Loto", icon: "📅", price: 50, prize: "50,000 ETB", note: "Planned draw: Sunday" },
-    { id: "monthly", name: "Monthly Loto", icon: "🌙", price: 50, prize: "100,000 ETB", note: "Planned monthly draw" },
-    { id: "holiday", name: "Holiday Loto", icon: "🎉", price: 0, prize: "Special rewards", note: "Demo prize concept" },
-    { id: "accessory", name: "Accessory Loto", icon: "🎁", price: 0, prize: "Special rewards", note: "Demo game" },
-    { id: "lebet", name: "Le Bet Loto", icon: "⭐", price: 0, prize: "To be configured", note: "Demo game" },
-    { id: "jemaw", name: "Jemaw Loto", icon: "🏆", price: 0, prize: "To be configured", note: "Demo game" },
-    { id: "beale", name: "Beale Loto", icon: "🌟", price: 0, prize: "To be configured", note: "Demo game" }
-  ];
-
-  let selectedGame = "daily";
-  const digits = [...document.querySelectorAll(".digit")];
-  const gameGrid = document.getElementById("gameGrid");
-  const selectedGameName = document.getElementById("selectedGameName");
-  const ticketPrice = document.getElementById("ticketPrice");
-  const ticketMessage = document.getElementById("ticketMessage");
-  const ticketHistory = document.getElementById("ticketHistory");
-  const saveBtn = document.getElementById("saveBtn");
-
-  function showMessage(text, type = "info") {
-    ticketMessage.textContent = text;
-    ticketMessage.className = "message show " + type;
-  }
-
-  function clearMessage() {
-    ticketMessage.textContent = "";
-    ticketMessage.className = "message";
-  }
-
-  function currentNumber() {
-    return digits.map(input => input.value).join("");
-  }
-
-  function updateDigitStyles() {
-    digits.forEach(input => {
-      input.classList.toggle("filled", input.value !== "");
-    });
-  }
-
-  function renderGames() {
-    gameGrid.innerHTML = "";
-
-    games.forEach(game => {
-      const card = document.createElement("button");
-      card.type = "button";
-      card.className = "game-card" + (game.id === selectedGame ? " selected" : "");
-      card.setAttribute("aria-pressed", String(game.id === selectedGame));
-
-      const icon = document.createElement("div");
-      icon.className = "game-icon";
-      icon.textContent = game.icon;
-
-      const mark = document.createElement("span");
-      mark.className = "selected-mark";
-      mark.textContent = "✓";
-
-      const name = document.createElement("strong");
-      name.textContent = game.name;
-
-      const price = document.createElement("span");
-      price.className = "price";
-      price.textContent = game.price > 0 ? game.price + " ETB (demo)" : "Demo configuration";
-
-      const prize = document.createElement("small");
-      prize.textContent = "Planned prize: " + game.prize;
-
-      const note = document.createElement("small");
-      note.textContent = game.note;
-
-      card.append(icon, mark, name, price, prize, note);
-      card.addEventListener("click", () => {
-        selectedGame = game.id;
-        selectedGameName.textContent = game.name;
-        ticketPrice.textContent = game.price > 0 ? game.price + " ETB (demo)" : "Not configured";
-        clearMessage();
-        renderGames();
-      });
-
-      gameGrid.appendChild(card);
-    });
-
-    const game = games.find(item => item.id === selectedGame);
-    selectedGameName.textContent = game.name;
-    ticketPrice.textContent = game.price > 0 ? game.price + " ETB (demo)" : "Not configured";
-  }
-
-  digits.forEach((input, index) => {
-    input.addEventListener("input", () => {
-      const cleaned = input.value.replace(/[^0-9]/g, "");
-      input.value = cleaned ? cleaned.charAt(cleaned.length - 1) : "";
-      updateDigitStyles();
-      clearMessage();
-
-      if (input.value && index < digits.length - 1) {
-        digits[index + 1].focus();
-      }
-    });
-
-    input.addEventListener("keydown", event => {
-      if (event.key === "Backspace" && !input.value && index > 0) {
-        digits[index - 1].focus();
-      } else if (event.key === "ArrowLeft" && index > 0) {
-        digits[index - 1].focus();
-      } else if (event.key === "ArrowRight" && index < digits.length - 1) {
-        digits[index + 1].focus();
-      } else if (event.key === "Enter") {
-        saveBtn.click();
-      }
-    });
-
-    input.addEventListener("paste", event => {
-      event.preventDefault();
-      const pasted = event.clipboardData
-        .getData("text")
-        .replace(/[^0-9]/g, "")
-        .slice(0, 6);
-
-      if (!pasted) return;
-
-      digits.forEach((box, i) => {
-        box.value = pasted[i] || "";
-      });
-
-      updateDigitStyles();
-      digits[Math.min(pasted.length, 5)].focus();
-      clearMessage();
-    });
-  });
-
-  document.getElementById("randomBtn").addEventListener("click", () => {
-    digits.forEach(input => {
-      input.value = String(Math.floor(Math.random() * 10));
-    });
-    updateDigitStyles();
-    showMessage("Demo number generated: " + currentNumber(), "info");
-  });
-
-  function addHistory(number, gameName, ticketId) {
-    const empty = ticketHistory.querySelector(".empty-history");
-    if (empty) ticketHistory.innerHTML = "";
-
-    const item = document.createElement("div");
-    item.className = "history-item";
-
-    const left = document.createElement("div");
-    const numberEl = document.createElement("div");
-    numberEl.className = "history-number";
-    numberEl.textContent = number;
-
-    const details = document.createElement("small");
-    details.textContent = gameName + " · " + ticketId;
-
-    left.append(numberEl, details);
-
-    const tag = document.createElement("span");
-    tag.className = "history-tag";
-    tag.textContent = "DEMO";
-
-    item.append(left, tag);
-    ticketHistory.prepend(item);
-  }
-
-  async function saveDemoTicket() {
-    clearMessage();
-
-    const number = currentNumber();
-
-    if (number.length !== 6 || !/^[0-9]{6}$/.test(number)) {
-      showMessage("Please fill all six boxes with digits from 0 to 9.", "error");
-      const firstEmpty = digits.find(input => input.value === "");
-      if (firstEmpty) firstEmpty.focus();
-      return;
-    }
-
-    if (!tg || !tg.initData) {
-      showMessage(
-        "Open this website from your Telegram bot to register and save a demo ticket. No payment has been taken.",
-        "error"
-      );
-      return;
-    }
-
-    saveBtn.disabled = true;
-    saveBtn.textContent = "Saving demo ticket…";
-
-    try {
-      const response = await fetch(API_BASE + "/api/demo-ticket", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Telegram-Init-Data": tg.initData
-        },
-        body: JSON.stringify({
-          game_id: selectedGame,
-          digits: number.split("").map(Number)
-        })
-      });
-
-      const result = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(result.detail || result.message || "Could not save the demo ticket.");
-      }
-
-      if (!result.ok) {
-        throw new Error(result.message || "The server did not confirm the ticket.");
-      }
-
-      addHistory(number, games.find(g => g.id === selectedGame).name, result.ticket_id);
-      showMessage(
-        "Demo ticket saved: " + number + ". Ticket ID: " + result.ticket_id +
-        ". No payment taken.",
-        "success"
-      );
-      digits.forEach(input => input.value = "");
-      updateDigitStyles();
-      digits[0].focus();
-    } catch (error) {
-      showMessage(
-        (error.message || "Connection failed.") +
-        " Check that your Telegram registration and backend are working. No payment was taken.",
-        "error"
-      );
-    } finally {
-      saveBtn.disabled = false;
-      saveBtn.textContent = "Save Demo Ticket";
-    }
-  }
-
-  saveBtn.addEventListener("click", saveDemoTicket);
-
-  renderGames();
-  updateDigitStyles();
-
-  if (tg && tg.initData) {
-    const user = tg.initDataUnsafe?.user;
-    if (user?.first_name) {
-      document.querySelector(".hero h2").textContent =
-        "Welcome, " + user.first_name + ". Choose six digits.";
-    }
-  }
-})();
+'use strict';
+const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+if(tg){tg.ready();tg.expand();try{tg.setHeaderColor('#073d2c');tg.setBackgroundColor('#073d2c')}catch(e){}}
+const API_BASE = window.location.origin;
+const GAMES = [
+ {id:'daily',name:'Daily Loto',emoji:'☀️',price:100,prize:'30,000 ETB',schedule:'Daily • Opens in the morning, closes at 6:00 PM',desc:'A daily demo draw with a fast-paced feel.',draw:'Daily at 6:00 PM',tag:'FAST CASH'},
+ {id:'weekly',name:'Weekly Loto',emoji:'🌙',price:50,prize:'50,000 ETB',schedule:'Every Sunday',desc:'Pick your six digits for the weekly demo draw.',draw:'Sunday',tag:'WEEKLY'},
+ {id:'monthly',name:'Monthly Loto',emoji:'🌟',price:50,prize:'100,000 ETB',schedule:'Monthly draw',desc:'A monthly demo ticket with a bigger starting prize display.',draw:'Monthly',tag:'MONTHLY'},
+ {id:'holiday',name:'Holiday Loto',emoji:'🎉',price:null,prize:'Holiday rewards',schedule:'Ethiopian holiday calendar',desc:'A festive demo game inspired by Ethiopian celebrations.',draw:'On selected Ethiopian holidays',tag:'CELEBRATE'},
+ {id:'accessory',name:'Accessory Loto',emoji:'🎁',price:null,prize:'Demo rewards',schedule:'Schedule to be announced',desc:'A fun rewards-themed demo game.',draw:'To be configured',tag:'REWARDS'},
+ {id:'lebet',name:'Le Bet Loto',emoji:'🎯',price:null,prize:'Demo prize',schedule:'Schedule to be announced',desc:'Choose six digits and save a demo ticket.',draw:'To be configured',tag:'PICK SIX'},
+ {id:'jemaw',name:'Jemaw Loto',emoji:'💎',price:null,prize:'Demo prize',schedule:'Schedule to be announced',desc:'A bright, celebratory six-digit demo game.',draw:'To be configured',tag:'LUCKY'},
+ {id:'beale',name:'Beale Loto',emoji:'🦁',price:null,prize:'Demo prize',schedule:'Schedule to be announced',desc:'A playful Ethiopian-inspired demo game.',draw:'To be configured',tag:'SPECIAL'}
+];
+let currentGame = GAMES[0], authMode='signup', player=null, tickets=[];
+const $=id=>document.getElementById(id);
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function getStore(key, fallback){try{return JSON.parse(localStorage.getItem(key))??fallback}catch(e){return fallback}}
+function setStore(key,value){try{localStorage.setItem(key,JSON.stringify(value))}catch(e){}}
+function initDecor(){const host=$('decor');for(let i=0;i<15;i++){const s=document.createElement('span');s.className='spark';s.textContent=['✦','✧','⋆','·'][i%4];s.style.left=(Math.random()*100)+'%';s.style.fontSize=(10+Math.random()*17)+'px';s.style.animationDuration=(12+Math.random()*17)+'s';s.style.animationDelay=(-Math.random()*22)+'s';host.appendChild(s)}}
+function renderGames(){const card=g=>`<button class="game-card" onclick="openGame('${g.id}')" aria-label="Open ${g.name}"><div style="display:flex;justify-content:space-between;align-items:start"><div class="ball">${g.emoji}</div><span class="mode" style="font-size:9px;padding:6px 7px">${g.tag}</span></div><div class="game-title">${g.name}</div><div class="meta">${g.schedule}</div><div class="price">${g.price?g.price+' ETB / demo ticket':g.prize}</div></button>`;$('homeGames').innerHTML=GAMES.slice(0,4).map(card).join('');$('allGames').innerHTML=GAMES.map(card).join('')}
+function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');const isIn=['home','games','gamePage','tickets','profile'].includes(id);$('bottomNav').classList.toggle('hidden',!isIn);document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.screen===id || (id==='gamePage'&&b.dataset.screen==='games')));if(id==='tickets')renderTickets();if(id==='profile')renderProfile();window.scrollTo({top:0,behavior:'smooth'});if(tg)try{tg.BackButton.show();tg.BackButton.onClick(()=>{if(id==='gamePage')go('games');else if(id==='games'||id==='tickets'||id==='profile')go('home');else go('welcome')})}catch(e){}}
+function showAuth(mode){authMode=mode;updateAuthForm();go('auth')}
+function toggleAuth(){authMode=authMode==='signup'?'login':'signup';updateAuthForm()}
+function updateAuthForm(){$('authTitle').textContent=authMode==='signup'?'Create your account':'Welcome back';$('authDescription').textContent=authMode==='signup'?'Create a demo player profile to get started.':'Enter your registered name and four-digit PIN.';$('nameWrap').classList.toggle('hidden',authMode==='login');$('phoneWrap').classList.toggle('hidden',authMode==='login');$('confirmWrap').classList.toggle('hidden',authMode==='login');$('playerName').required=authMode==='signup';$('confirmPin').required=authMode==='signup';$('authSubmit').textContent=authMode==='signup'?'✨ Create demo account':'🔐 Log in';$('switchText').textContent=authMode==='signup'?'Already registered?':'New to Lucky Star?';$('switchAuth').textContent=authMode==='signup'?'Log in':'Sign up';showMessage('authMessage','', '');}
+function showMessage(id,text,type){const el=$(id);el.textContent=text;el.className='message'+(text?' show '+type:'')}
+async function api(path,options={}){const headers={'Content-Type':'application/json',...(options.headers||{})};if(tg?.initData)headers['X-Telegram-Init-Data']=tg.initData;const res=await fetch(API_BASE+path,{...options,headers});let data={};try{data=await res.json()}catch(e){}if(!res.ok)throw new Error(data.detail||data.message||`Request failed (${res.status})`);return data}
+$('authForm').addEventListener('submit',async e=>{e.preventDefault();const name=$('playerName').value.trim(),phone=$('playerPhone').value.trim(),pin=$('playerPin').value,confirm=$('confirmPin').value;if(!/^\d{4}$/.test(pin)){showMessage('authMessage','Enter exactly four digits for your PIN.','error');return}if(authMode==='signup'&&pin!==confirm){showMessage('authMessage','The PINs do not match.','error');return}const submit=$('authSubmit');submit.disabled=true;submit.textContent='Please wait…';try{const path=authMode==='signup'?'/api/auth/signup':'/api/auth/login';const body=authMode==='signup'?{name,phone,pin,telegram_init_data:tg?.initData||''}:{name,pin,telegram_init_data:tg?.initData||''};const data=await api(path,{method:'POST',body:JSON.stringify(body)});player={name:data.player?.name||data.name||name,phone:data.player?.phone||phone,telegram_id:data.player?.telegram_id||null,authenticated:true,server:true};setStore('luckyStarPlayer',player);showMessage('authMessage',authMode==='signup'?'Account created! Opening the game…':'Login successful! Welcome back.','ok');confetti();setTimeout(()=>enterApp(),350)}catch(err){showMessage('authMessage',`${err.message}. Your backend must implement ${authMode==='signup'?'/api/auth/signup':'/api/auth/login'}; this HTML alone cannot securely create or verify accounts.`, 'error')}finally{submit.disabled=false;submit.textContent=authMode==='signup'?'✨ Create demo account':'🔐 Log in'}});
+function enterApp(){if(!player)return; $('topUser').textContent='👋 '+(player.name||'Player');$('bottomNav').classList.remove('hidden');go('home');renderTickets()}
+function logout(){player=null;setStore('luckyStarPlayer',null);$('topUser').textContent='';$('bottomNav').classList.add('hidden');go('welcome')}
+function renderProfile(){$('profileName').textContent=player?.name||'Demo player';$('profileInfo').textContent=(player?.phone?player.phone+' • ':'')+(player?.server?'Server-verified account':'Local session')+' • DEMO mode'}
+function openGame(id){currentGame=GAMES.find(g=>g.id===id)||GAMES[0];renderGamePage();go('gamePage')}
+function renderGamePage(){const g=currentGame;const digits=Array(6).fill('').map((_,i)=>`<input class="digit" id="digit${i}" aria-label="Digit ${i+1}" inputmode="numeric" pattern="[0-9]" maxlength="1" value="" oninput="digitInput(${i},this)" onkeydown="digitKey(event,${i})" autocomplete="off">`).join('');$('gameDetails').innerHTML=`
+ <div class="hero"><div class="game-hero"><div class="ball">${g.emoji}</div><div><div class="eyebrow">${g.tag} • DEMO GAME</div><h1>${g.name}</h1><p class="sub" style="margin-bottom:0">${g.desc}</p></div></div>
+ <div class="stats"><div class="stat"><small>STARTING PRIZE DISPLAY</small><strong>${g.prize}</strong></div><div class="stat"><small>DRAW INFORMATION</small><strong style="font-size:14px">${g.draw}</strong></div></div>
+ <div class="notice">${g.price?`Demo ticket reference price: ${g.price} ETB. No money is collected.`:'Demo rewards and draw schedule need to be configured by the operator.'} Prize amounts and schedules are informational demo values, not a promise of a real payout.</div></div>
+ <div class="ticket-layout"><div class="panel"><div class="eyebrow">Build your ticket</div><h2>Choose six digits</h2><p class="sub">Enter any digit from 0–9. Repeated digits and leading zeros are allowed.</p><div class="digits">${digits}</div><div class="ticket-actions"><button class="btn secondary" onclick="randomDigits()">🎲 Random number</button><button class="btn ghost" onclick="clearDigits()">Clear digits</button></div><button class="btn primary full" style="margin-top:10px" onclick="saveTicket()">✨ Add demo ticket</button><div id="ticketMessage" class="message" role="status"></div></div>
+ <div class="panel"><div class="eyebrow">Your selection</div><h3>Ticket preview</h3><p class="sub">Each saved ticket appears in My Tickets with its own demo ID.</p><div id="previewNumber" class="digits" style="margin-bottom:8px">${Array(6).fill('<div class="digit" style="display:grid;place-items:center;aspect-ratio:.82">?</div>').join('')}</div><button class="btn secondary full" onclick="go('tickets')">🎟 View my tickets (<span id="gameTicketCount">0</span>)</button></div></div>`;updatePreview()}
+function digitInput(i,el){el.value=el.value.replace(/\D/g,'').slice(-1);if(el.value&&i<5)$('digit'+(i+1)).focus();updatePreview()}
+function digitKey(e,i){if(e.key==='Backspace'&&!e.target.value&&i>0)$('digit'+(i-1)).focus();if(e.key==='ArrowLeft'&&i>0)$('digit'+(i-1)).focus();if(e.key==='ArrowRight'&&i<5)$('digit'+(i+1)).focus()}
+function currentDigits(){return Array.from({length:6},(_,i)=>$('digit'+i)?.value||'')}
+function updatePreview(){const d=currentDigits();const p=$('previewNumber');if(!p)return;p.innerHTML=d.map(x=>`<div class="digit" style="display:grid;place-items:center;aspect-ratio:.82;animation:${x?'screenIn .2s ease':''}">${x||'?'}</div>`).join('');const c=tickets.filter(t=>t.game_id===currentGame.id).length;if($('gameTicketCount'))$('gameTicketCount').textContent=c}
+function randomDigits(){for(let i=0;i<6;i++)$('digit'+i).value=String(Math.floor(Math.random()*10));updatePreview();confetti(10)}
+function clearDigits(){for(let i=0;i<6;i++)$('digit'+i).value='';updatePreview();$('digit0').focus()}
+async function saveTicket(){if(!player){go('welcome');return}const d=currentDigits();if(d.some(x=>x==='')){showMessage('ticketMessage','Please fill all six digit boxes first.','error');return}const ticket={ticket_id:'LOCAL-'+Math.random().toString(36).slice(2,8).toUpperCase(),game_id:currentGame.id,game_name:currentGame.name,digits:d.join(''),draw:currentGame.draw,created_at:new Date().toISOString(),mode:'DEMO',server_saved:false};try{const data=await api('/api/demo-ticket',{method:'POST',body:JSON.stringify({game_id:currentGame.id,digits:d.map(Number)})});ticket.ticket_id=data.ticket_id||ticket.ticket_id;ticket.server_saved=true}catch(err){/* Local demo ticket remains available; server sync requires Telegram initData and backend support. */}tickets.unshift(ticket);setStore('luckyStarTickets',tickets);showMessage('ticketMessage',ticket.server_saved?'🎉 Demo ticket saved to the server! No payment taken.':'🎉 Demo ticket added to this browser. Server save needs a valid Telegram Mini App session and working /api/demo-ticket endpoint.','ok');confetti();updatePreview();renderTickets()}
+function goGames(){go('games')}
+function renderTickets(){const host=$('ticketsList');$('ticketCountBadge').textContent=tickets.length?`(${tickets.length})`:'';if(!tickets.length){host.innerHTML='<div class="panel empty"><div class="big-logo">🎟️</div><h3>Your ticket collection is waiting</h3><p>Open a game, choose six digits, and add your first demo ticket.</p><button class="btn primary" onclick="goGames()">Explore games</button></div>';return}host.innerHTML=tickets.map(t=>{const g=GAMES.find(x=>x.id===t.game_id);const num=String(t.digits).split('').map(n=>`<span class="mini-digit">${esc(n)}</span>`).join('');const date=new Date(t.created_at);return `<article class="ticket"><div style="min-width:0"><strong>${esc(g?.emoji||'🎟️')} ${esc(t.game_name||g?.name||t.game_id)}</strong><div class="ticket-number">${num}</div><small>ID: ${esc(t.ticket_id)} • Draw: ${esc(t.draw||g?.draw||'To be configured')}</small><small>${Number.isNaN(date.getTime())?'':date.toLocaleString()}</small><small>${t.server_saved?'✓ Server saved':'Local demo copy'} • No payment</small></div><button class="btn secondary" style="padding:9px 10px;white-space:nowrap" onclick="openGame('${esc(t.game_id)}')">Play again</button></article>`}).join('')}
+function confetti(count=24){if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;for(let i=0;i<count;i++){const el=document.createElement('i');el.className='confetti';el.style.left=Math.random()*100+'vw';el.style.background=['#f6c453','#ffe8a3','#56d99b','#fff7d8'][i%4];el.style.animationDelay=Math.random()*.25+'s';el.style.transform=`rotate(${Math.random()*180}deg)`;document.body.appendChild(el);setTimeout(()=>el.remove(),2100)}}
+async function init(){initDecor();renderGames();tickets=getStore('luckyStarTickets',[]);const saved=getStore('luckyStarPlayer',null);if(saved?.authenticated){player=saved;enterApp()}else{go('welcome')}
+ // Ask existing /api/me for Telegram identity context; do not bypass the PIN screen automatically.
+ if(tg?.initData){try{const data=await api('/api/me');if(data?.player?.name&&!player){$('playerName').value=data.player.name}}catch(e){}}
+}
+init();
 </script>
 </body>
 </html>
