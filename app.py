@@ -15,27 +15,34 @@ from fastapi import FastAPI, Request, HTTPException
 from pydantic import BaseModel, Field
 
 app = FastAPI(title="Ethiopia Lucky Star")
-STATIC_DIR = Path(__file__).resolve().parent / "static"
 
-app.mount(
-    "/static",
-    StaticFiles(directory=str(STATIC_DIR)),
-    name="static"
-)
+STATIC_DIR = Path(__file__).resolve().parent / "static"
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
 WEB_APP_URL = os.getenv(
     "WEB_APP_URL",
-    "https://ethio-lottery-demo.onrender.com"
+    "https://lotto-bot2.onrender.com"
 ).rstrip("/")
-DATABASE_PATH = "/tmp/lucky_star.db"
+DATABASE_PATH = os.getenv("DATABASE_PATH", "/tmp/lucky_star.db")
 WEBHOOK_SECRET = os.getenv("TELEGRAM_WEBHOOK_SECRET_TOKEN", "")
 
-GAMES = {"daily", "weekly", "monthly", "holiday", "jemaw", "lebet"}
+# Demo only. No payment endpoints or payment processing are enabled.
+GAMES = {
+    "daily", "weekly", "monthly", "holiday",
+    "accessory", "jemaw", "lebet", "beale",
+}
+PIN_ITERATIONS = 310_000
+MAX_PIN_ATTEMPTS = 5
+PIN_LOCK_SECONDS = 15 * 60
 
 
 def connect_db():
+    db_path = Path(DATABASE_PATH)
+    db_path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(DATABASE_PATH, timeout=20)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
 
@@ -58,20 +65,42 @@ def initialize_db():
                 game_id TEXT NOT NULL,
                 digits_json TEXT NOT NULL,
                 created_at INTEGER NOT NULL,
-                FOREIGN KEY (telegram_id)
-                    REFERENCES players(telegram_id)
+                FOREIGN KEY (telegram_id) REFERENCES players(telegram_id)
             )
         """)
+
+        # Safe migrations for existing SQLite databases.
+        existing = {
+            row["name"] for row in
+            conn.execute("PRAGMA table_info(players)").fetchall()
+        }
+        migrations = {
+            "display_name": "TEXT NOT NULL DEFAULT ''",
+            "phone": "TEXT NOT NULL DEFAULT ''",
+            "pin_salt": "TEXT NOT NULL DEFAULT ''",
+            "pin_hash": "TEXT NOT NULL DEFAULT ''",
+            "failed_pin_attempts": "INTEGER NOT NULL DEFAULT 0",
+            "pin_lock_until": "INTEGER NOT NULL DEFAULT 0",
+        }
+        for column, definition in migrations.items():
+            if column not in existing:
+                conn.execute(
+                    f"ALTER TABLE players ADD COLUMN {column} {definition}"
+                )
 
 
 initialize_db()
 
 
 def validate_init_data(init_data):
+    """Verify Telegram Mini App initData; never trust client-supplied user IDs."""
     if not BOT_TOKEN:
         raise HTTPException(503, "Backend BOT_TOKEN is not configured.")
     if not init_data or len(init_data) > 10000:
-        raise HTTPException(401, "Missing Telegram session.")
+        raise HTTPException(
+            401,
+            "Open this page from the Telegram bot to verify your account."
+        )
 
     pairs = parse_qsl(init_data, keep_blank_values=True)
     data = dict(pairs)
@@ -97,7 +126,9 @@ def validate_init_data(init_data):
 
     try:
         auth_date = int(data["auth_date"])
-        if abs(int(time.time()) - auth_date) > 86400:
+        # Reject old sessions and timestamps too far in the future.
+        now = int(time.time())
+        if auth_date > now + 60 or now - auth_date > 86400:
             raise HTTPException(401, "Telegram session expired.")
         user = json.loads(data["user"])
         if not isinstance(user, dict) or not user.get("id"):
@@ -105,6 +136,13 @@ def validate_init_data(init_data):
         return user
     except (KeyError, ValueError, TypeError, json.JSONDecodeError):
         raise HTTPException(401, "Invalid Telegram user data.")
+
+
+def request_telegram_user(request, body_init_data=""):
+    init_data = request.headers.get("X-Telegram-Init-Data", "")
+    if not init_data:
+        init_data = body_init_data or ""
+    return validate_init_data(init_data)
 
 
 def registered_player(request):
@@ -119,7 +157,7 @@ def registered_player(request):
 
     if not player:
         raise HTTPException(
-            403, "Please register using the Telegram bot first."
+            403, "Please send /start to the Telegram bot before playing."
         )
     return user, dict(player)
 
@@ -132,9 +170,13 @@ async def telegram_call(method, payload):
             f"https://api.telegram.org/bot{BOT_TOKEN}/{method}",
             json=payload
         )
-    if response.status_code >= 400 or not response.json().get("ok"):
+    try:
+        result = response.json()
+    except ValueError:
+        result = {}
+    if response.status_code >= 400 or not result.get("ok"):
         raise HTTPException(502, "Telegram API request failed.")
-    return response.json().get("result")
+    return result.get("result")
 
 
 def register_user(user):
@@ -184,22 +226,171 @@ def register_user(user):
         ).fetchone())
 
 
+def hash_pin(pin, salt_hex=None):
+    salt = bytes.fromhex(salt_hex) if salt_hex else secrets.token_bytes(16)
+    digest = hashlib.pbkdf2_hmac(
+        "sha256", pin.encode("utf-8"), salt, PIN_ITERATIONS
+    )
+    return salt.hex(), digest.hex()
+
+
+def pin_matches(pin, salt_hex, expected_hash):
+    _, candidate = hash_pin(pin, salt_hex)
+    return hmac.compare_digest(candidate, expected_hash)
+
+
+class SignupInput(BaseModel):
+    name: str = Field(min_length=1, max_length=80)
+    phone: str = Field(default="", max_length=32)
+    pin: str = Field(min_length=4, max_length=4, pattern=r"^[0-9]{4}$")
+    telegram_init_data: str = Field(default="", max_length=10000)
+
+
+class LoginInput(BaseModel):
+    name: str = Field(default="", max_length=80)
+    pin: str = Field(min_length=4, max_length=4, pattern=r"^[0-9]{4}$")
+    telegram_init_data: str = Field(default="", max_length=10000)
+
+
+def auth_player_response(player):
+    return {
+        "name": player.get("display_name") or player.get("first_name") or "Player",
+        "phone": player.get("phone", ""),
+        "telegram_id": player["telegram_id"],
+        "referral_code": player.get("referral_code", ""),
+        "mode": "DEMO",
+        "payments_enabled": False,
+    }
+
+
 @app.get("/", include_in_schema=False)
 async def home():
     index_file = STATIC_DIR / "index.html"
-
     if not index_file.is_file():
         raise HTTPException(
             status_code=404,
             detail="Game page missing: static/index.html"
         )
-
     return FileResponse(str(index_file))
 
 
 @app.get("/health")
 async def health():
     return {"ok": True, "mode": "DEMO", "payments_enabled": False}
+
+
+@app.post("/api/auth/signup")
+async def auth_signup(body: SignupInput, request: Request):
+    # Only Telegram-signed Mini App data can bind this account to a Telegram ID.
+    user = request_telegram_user(request, body.telegram_init_data)
+    telegram_id = str(user["id"])
+    display_name = body.name.strip()
+    if not display_name:
+        raise HTTPException(422, "Enter your name.")
+
+    # Create the Telegram-linked player row if /start has not created it yet.
+    register_user(user)
+
+    salt, pin_hash = hash_pin(body.pin)
+    with connect_db() as conn:
+        player = conn.execute(
+            "SELECT * FROM players WHERE telegram_id = ?",
+            (telegram_id,)
+        ).fetchone()
+
+        if player["pin_hash"]:
+            raise HTTPException(
+                409,
+                "This Telegram account already has a PIN. Please log in."
+            )
+
+        conn.execute("""
+            UPDATE players
+            SET display_name = ?, phone = ?, pin_salt = ?, pin_hash = ?,
+                failed_pin_attempts = 0, pin_lock_until = 0
+            WHERE telegram_id = ?
+        """, (
+            display_name[:80],
+            body.phone.strip()[:32],
+            salt,
+            pin_hash,
+            telegram_id,
+        ))
+        updated = dict(conn.execute(
+            "SELECT * FROM players WHERE telegram_id = ?",
+            (telegram_id,)
+        ).fetchone())
+
+    return {
+        "ok": True,
+        "player": auth_player_response(updated),
+        "mode": "DEMO",
+        "payments_enabled": False,
+    }
+
+
+@app.post("/api/auth/login")
+async def auth_login(body: LoginInput, request: Request):
+    user = request_telegram_user(request, body.telegram_init_data)
+    telegram_id = str(user["id"])
+    now = int(time.time())
+    failure_status = None
+    updated = None
+
+    with connect_db() as conn:
+        player = conn.execute(
+            "SELECT * FROM players WHERE telegram_id = ?",
+            (telegram_id,)
+        ).fetchone()
+
+        if not player or not player["pin_hash"]:
+            raise HTTPException(
+                401,
+                "No PIN account found for this Telegram account. Please sign up first."
+            )
+
+        if int(player["pin_lock_until"] or 0) > now:
+            wait_seconds = int(player["pin_lock_until"]) - now
+            raise HTTPException(
+                429,
+                f"Too many incorrect PIN attempts. Try again in about "
+                f"{max(1, (wait_seconds + 59) // 60)} minute(s)."
+            )
+
+        if not pin_matches(body.pin, player["pin_salt"], player["pin_hash"]):
+            attempts = int(player["failed_pin_attempts"] or 0) + 1
+            lock_until = now + PIN_LOCK_SECONDS if attempts >= MAX_PIN_ATTEMPTS else 0
+            conn.execute("""
+                UPDATE players
+                SET failed_pin_attempts = ?, pin_lock_until = ?
+                WHERE telegram_id = ?
+            """, (attempts, lock_until, telegram_id))
+            failure_status = 429 if lock_until else 401
+        else:
+            conn.execute("""
+                UPDATE players
+                SET failed_pin_attempts = 0, pin_lock_until = 0
+                WHERE telegram_id = ?
+            """, (telegram_id,))
+            updated = dict(conn.execute(
+                "SELECT * FROM players WHERE telegram_id = ?",
+                (telegram_id,)
+            ).fetchone())
+
+    # Raise only after leaving the DB context, so failed attempts are committed.
+    if failure_status == 429:
+        raise HTTPException(
+            429, "Too many incorrect PIN attempts. Try again in 15 minutes."
+        )
+    if failure_status == 401:
+        raise HTTPException(401, "Incorrect PIN.")
+
+    return {
+        "ok": True,
+        "player": auth_player_response(updated),
+        "mode": "DEMO",
+        "payments_enabled": False,
+    }
 
 
 @app.get("/api/me")
@@ -211,11 +402,13 @@ async def api_me(request: Request):
             "first_name": player["first_name"],
             "last_name": player["last_name"],
             "username": player["username"],
-            "referral_code": player["referral_code"]
+            "referral_code": player["referral_code"],
+            "name": player.get("display_name") or player["first_name"],
+            "phone": player.get("phone", ""),
         },
-        "mode": "DEMO"
+        "mode": "DEMO",
+        "payments_enabled": False,
     }
-
 
 
 class TicketInput(BaseModel):
@@ -232,33 +425,27 @@ async def demo_ticket(body: TicketInput, request: Request):
 
     if len(body.digits) != 6:
         raise HTTPException(
-            status_code=422,
-            detail="Enter exactly six digits."
+            status_code=422, detail="Enter exactly six digits."
         )
 
     if any(n < 0 or n > 9 for n in body.digits):
         raise HTTPException(
-            status_code=422,
-            detail="Digits must be from 0 to 9."
+            status_code=422, detail="Digits must be from 0 to 9."
         )
 
     ticket_id = "DEMO-" + secrets.token_hex(4).upper()
-
     with connect_db() as conn:
-        conn.execute(
-            """
+        conn.execute("""
             INSERT INTO demo_tickets
                 (ticket_id, telegram_id, game_id, digits_json, created_at)
             VALUES (?, ?, ?, ?, ?)
-            """,
-            (
-                ticket_id,
-                player["telegram_id"],
-                body.game_id,
-                json.dumps(body.digits),
-                int(time.time()),
-            ),
-        )
+        """, (
+            ticket_id,
+            player["telegram_id"],
+            body.game_id,
+            json.dumps(body.digits),
+            int(time.time()),
+        ))
 
     return {
         "ok": True,
@@ -294,7 +481,8 @@ async def telegram_webhook(request: Request):
                 f"Selam {player['first_name'] or 'player'}! 🇪🇹\n\n"
                 "Your demo account is registered.\n"
                 f"Referral code: {player['referral_code']}\n"
-                "Payments and cash prizes are disabled."
+                "Open the game to create your PIN. Payments and cash prizes "
+                "are disabled in this demo."
             ),
             "reply_markup": {
                 "inline_keyboard": [[{
