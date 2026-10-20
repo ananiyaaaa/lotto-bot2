@@ -1,312 +1,317 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Ethiopia Lucky Star | Admin</title>
-  <style>
-    :root {
-      --green: #075b3b;
-      --green2: #0b7b50;
-      --gold: #f2c94c;
-      --bg: #f3f6f4;
-      --card: #fff;
-      --text: #17251e;
-      --muted: #68766e;
-      --border: #dfe7e1;
-      --red: #b42318;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      background: var(--bg);
-      color: var(--text);
-      font-family: Arial, sans-serif;
-    }
-    header {
-      background: var(--green);
-      color: white;
-      padding: 20px;
-      border-bottom: 4px solid var(--gold);
-    }
-    .head, main {
-      max-width: 1200px;
-      margin: auto;
-    }
-    .head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    h1 { margin: 0; font-size: 22px; }
-    header p { margin: 7px 0 0; color: #e0eee5; }
-    main { padding: 22px 16px 50px; }
-    .notice {
-      background: #fff5d7;
-      border: 1px solid #e8cf7a;
-      border-radius: 12px;
-      padding: 13px;
-      margin-bottom: 18px;
-      line-height: 1.5;
-    }
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 12px;
-      margin-bottom: 24px;
-    }
-    .card, .panel {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 17px;
-      box-shadow: 0 3px 12px #102d1710;
-      min-width: 0;
-    }
-    .stat-label { color: var(--muted); font-size: 13px; }
-    .stat-value { font-size: 28px; font-weight: 800; margin-top: 8px; }
-    h2 { font-size: 19px; margin: 0 0 15px; }
-    .section { margin-top: 24px; }
-    .games {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 12px;
-    }
-    .game-name { font-weight: 800; margin-bottom: 8px; }
-    .price { color: var(--green2); font-weight: 700; }
-    .muted { color: var(--muted); font-size: 13px; line-height: 1.5; }
-    label { display: block; font-size: 13px; font-weight: 700; margin: 12px 0 6px; }
-    input, select {
-      width: 100%;
-      padding: 11px;
-      border: 1px solid #cbd8ce;
-      border-radius: 8px;
-      background: white;
-      color: var(--text);
-      font: inherit;
-    }
-    button {
-      border: 0;
-      border-radius: 9px;
-      background: var(--green2);
-      color: white;
-      font-weight: 700;
-      padding: 12px 15px;
-      cursor: pointer;
-    }
-    button:focus, input:focus, select:focus {
-      outline: 3px solid #f2c94c88;
-      outline-offset: 1px;
-    }
-    button.secondary { background: #e8eee9; color: var(--green); }
-    button:disabled { opacity: .55; cursor: not-allowed; }
-    .draw-layout {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-      gap: 18px;
-    }
-    .result {
-      margin-top: 15px;
-      padding: 18px;
-      border-radius: 12px;
-      background: #eaf5ed;
-      border: 1px solid #b8dbc2;
-    }
-    .digits {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-      margin: 12px 0;
-    }
-    .digit {
-      width: 38px;
-      height: 44px;
-      display: grid;
-      place-items: center;
-      background: var(--green);
-      color: white;
-      border-radius: 8px;
-      font-size: 22px;
-      font-weight: 800;
-    }
-    .table-wrap { overflow-x: auto; }
-    table { border-collapse: collapse; width: 100%; min-width: 480px; }
-    th, td { text-align: left; padding: 12px 9px; border-bottom: 1px solid var(--border); }
-    th { color: var(--muted); font-size: 12px; text-transform: uppercase; }
-    .tag {
-      display: inline-block; padding: 5px 8px; border-radius: 20px;
-      background: #e8eee9; color: var(--green); font-size: 12px; font-weight: 700;
-    }
-    footer { color: var(--muted); font-size: 12px; text-align: center; padding: 24px; }
-    @media (max-width: 800px) {
-      .stats, .games { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .draw-layout { grid-template-columns: 1fr; }
-    }
-    @media (max-width: 420px) {
-      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .games { grid-template-columns: 1fr; }
-      h1 { font-size: 19px; }
-      .stat-value { font-size: 24px; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#123d2b">
+<title>Ethiopia Lucky Star | Admin</title>
+<style>
+:root {
+  --green:#123d2b;
+  --green2:#1c6042;
+  --gold:#e7b93f;
+  --bg:#f3f6f3;
+  --white:#fff;
+  --text:#19271f;
+  --muted:#708076;
+  --line:#e1e9e2;
+  --red:#b83d3d;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);font-family:Arial,sans-serif;color:var(--text)}
+button,input,select{font:inherit}
+button{cursor:pointer}
+.layout{min-height:100vh;display:grid;grid-template-columns:245px 1fr}
+.sidebar{background:var(--green);color:#fff;padding:25px 17px}
+.brand{display:flex;gap:11px;align-items:center;padding:5px 7px 27px}
+.logo{width:43px;height:43px;border-radius:13px;background:var(--gold);color:var(--green);display:grid;place-items:center;font-size:24px;font-weight:900}
+.brand h2{font-size:16px;margin:0 0 4px}
+.brand small{color:#c6d7cb}
+.navlabel{font-size:10px;letter-spacing:1.5px;color:#a8c4b2;margin:18px 9px 9px}
+.nav button{width:100%;padding:12px;border:0;background:transparent;color:#e0ece3;text-align:left;border-radius:9px;margin:3px 0}
+.nav button.active,.nav button:hover{background:#2c6a4d;color:#fff}
+.sidebar-note{margin-top:35px;border:1px solid #47775d;border-radius:12px;padding:13px;font-size:12px;line-height:1.6;color:#d7e8db}
+main{min-width:0}
+.topbar{height:76px;background:white;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 30px;gap:15px}
+.topbar h1{font-size:20px;margin:0}
+.topright{display:flex;align-items:center;gap:10px}
+.pill{display:inline-flex;align-items:center;gap:6px;background:#e1f4e7;color:#176338;padding:7px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.dot{width:7px;height:7px;border-radius:50%;background:#249453}
+.content{padding:27px;max-width:1450px;margin:auto}
+.welcome{background:linear-gradient(120deg,#123d2b,#27724c);color:white;padding:25px;border-radius:16px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+.welcome h2{font-size:23px;margin:0 0 8px}
+.welcome p{color:#d9e9dd;margin:0;line-height:1.5;font-size:13px}
+.welcome-icon{font-size:48px}
+.warning{padding:12px 14px;border-radius:10px;background:#fff3d6;border:1px solid #f1d89a;color:#795614;font-size:12px;line-height:1.6;margin:18px 0}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:20px 0}
+.stat,.panel,.gamecard{background:#fff;border:1px solid var(--line);border-radius:13px}
+.stat{padding:18px}
+.stat-label{font-size:12px;color:var(--muted)}
+.stat-value{font-size:27px;font-weight:800;margin:10px 0 5px}
+.stat-foot{font-size:11px;color:var(--muted)}
+.section-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:27px 0 14px}
+.section-head h2{font-size:17px;margin:0}
+.section-head p{font-size:12px;color:var(--muted);margin:5px 0 0}
+.games{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}
+.gamecard{padding:16px;min-width:0}
+.game-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.game-icon{width:38px;height:38px;border-radius:11px;background:#e8f2eb;display:grid;place-items:center;font-size:21px}
+.game-status{font-size:10px;background:#edf0ed;color:#657067;padding:5px 7px;border-radius:20px}
+.gamecard h3{font-size:14px;margin:13px 0 6px}
+.price{font-size:21px;font-weight:800;color:var(--green)}
+.prize{font-size:12px;color:var(--muted);margin-top:5px;min-height:18px}
+.game-details{font-size:11px;color:#657067;line-height:1.6;margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+.panels{display:grid;grid-template-columns:1.1fr .9fr;gap:15px;margin-top:22px}
+.panel{padding:19px;min-width:0}
+.panel h3{font-size:15px;margin:0 0 6px}
+.panel-desc{font-size:12px;color:var(--muted);margin:0 0 17px;line-height:1.5}
+.field{margin:12px 0}
+.field label{display:block;font-size:12px;font-weight:700;margin-bottom:7px}
+.field input,.field select{width:100%;padding:11px;border:1px solid #d6e0d7;border-radius:8px;background:white;color:var(--text)}
+.btn{border:0;border-radius:8px;padding:11px 14px;font-size:12px;font-weight:700}
+.btn-primary{background:var(--green);color:#fff}
+.btn-secondary{background:#edf3ee;color:var(--green)}
+.btn-gold{background:var(--gold);color:#263322}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.result{background:#f4f7f4;border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:14px}
+.result-label{font-size:11px;color:var(--muted)}
+.digits{display:flex;gap:5px;margin:12px 0}
+.digit{width:34px;height:42px;background:white;border:1px solid #d8e2d9;border-radius:7px;display:grid;place-items:center;font-size:20px;font-weight:800}
+.result small{font-size:11px;color:var(--muted);line-height:1.5}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px;min-width:470px}
+th,td{text-align:left;padding:12px 9px;border-bottom:1px solid var(--line)}
+th{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.empty{text-align:center;color:var(--muted);padding:25px 8px;font-size:12px;line-height:1.7}
+.footer{padding:24px 0 8px;text-align:center;color:var(--muted);font-size:11px}
+.hidden{display:none!important}
+.notice{font-size:12px;line-height:1.6;margin-top:12px;padding:11px;border-radius:8px;background:#fff3d6;color:#795614}
+@media(max-width:1100px){
+ .games{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:760px){
+ .layout{grid-template-columns:1fr}
+ .sidebar{padding:12px}
+ .brand{padding:5px 5px 12px}
+ .brand h2{font-size:14px}
+ .navlabel,.sidebar-note{display:none}
+ .nav{display:flex;gap:5px;overflow-x:auto;padding-bottom:4px}
+ .nav button{white-space:nowrap;width:auto;margin:0;padding:10px;font-size:11px}
+ .topbar{height:62px;padding:0 15px}
+ .topbar h1{font-size:17px}
+ .content{padding:15px}
+ .welcome{padding:20px}
+ .welcome h2{font-size:20px}
+ .welcome-icon{font-size:34px}
+ .stats{gap:9px}
+ .stat{padding:13px}
+ .stat-value{font-size:23px}
+ .panels{grid-template-columns:1fr}
+}
+@media(max-width:390px){
+ .games{grid-template-columns:1fr}
+ .topright .pill{font-size:10px;padding:6px}
+ .welcome-icon{display:none}
+}
+</style>
 </head>
 <body>
-<header>
-  <div class="head">
-    <div>
-      <h1>🇪🇹 Ethiopia Lucky Star</h1>
-      <p>Lottery administration · Demo environment</p>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">★</div>
+      <div><h2>ETHIOPIA LUCKY STAR</h2><small>Administration</small></div>
     </div>
-    <span class="tag">DEMO · NO PAYMENTS</span>
-  </div>
-</header>
+    <div class="navlabel">WORKSPACE</div>
+    <nav class="nav">
+      <button class="active" data-view="overview">▦ Overview</button>
+      <button data-view="games">🎟 Games & Rules</button>
+      <button data-view="draw">🎲 Demo Draw</button>
+      <button data-view="tickets">▤ Tickets</button>
+    </nav>
+    <div class="sidebar-note">
+      <strong>DEMO ENVIRONMENT</strong><br>
+      No deposits, payments, withdrawals, or real-money prizes are enabled.
+    </div>
+  </aside>
 
-<main>
-  <div class="notice">
-    <strong>Demo mode only.</strong>
-    This page currently displays a sample interface. Draws are not saved,
-    player data is not loaded, and no prize or payment is processed until
-    the protected backend is connected.
-  </div>
-
-  <section class="stats" aria-label="Dashboard summaries">
-    <div class="card">
-      <div class="stat-label">Registered players</div>
-      <div class="stat-value" id="players">—</div>
-    </div>
-    <div class="card">
-      <div class="stat-label">Demo tickets</div>
-      <div class="stat-value" id="tickets">—</div>
-    </div>
-    <div class="card">
-      <div class="stat-label">Games configured</div>
-      <div class="stat-value">8</div>
-    </div>
-    <div class="card">
-      <div class="stat-label">Payments</div>
-      <div class="stat-value">OFF</div>
-    </div>
-  </section>
-
-  <section class="section">
-    <h2>Lottery games</h2>
-    <div class="games" id="games"></div>
-  </section>
-
-  <section class="section draw-layout">
-    <div class="panel">
-      <h2>Random draw control</h2>
-      <p class="muted">
-        Select a game, generate a six-digit result, and review it before
-        confirmation. This preview is local only and is not an official draw.
-      </p>
-      <label for="game">Lottery game</label>
-      <select id="game"></select>
-      <label for="drawDate">Draw date</label>
-      <input id="drawDate" type="date">
-      <button id="generate" style="width:100%;margin-top:16px">
-        Generate demo result
-      </button>
-      <div class="result" id="preview" aria-live="polite" hidden>
-        <strong>Demo result preview</strong>
-        <div class="digits" id="digits"></div>
-        <p class="muted" id="previewInfo"></p>
-        <button id="save" class="secondary" disabled>
-          Save result (backend not connected)
-        </button>
+  <main>
+    <header class="topbar">
+      <h1 id="pageTitle">Dashboard Overview</h1>
+      <div class="topright">
+        <span class="pill"><span class="dot"></span> DEMO MODE</span>
       </div>
-    </div>
+    </header>
 
-    <div class="panel">
-      <h2>Draw history</h2>
-      <p class="muted">
-        Official draw history will appear here after the secure backend is
-        implemented. This page does not store results.
-      </p>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr><th>Game</th><th>Date</th><th>Result</th><th>Status</th></tr>
-          </thead>
-          <tbody id="history">
-            <tr><td colspan="4">No connected draw history.</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </section>
+    <div class="content">
+      <section id="overview">
+        <div class="welcome">
+          <div>
+            <h2>Selam! Welcome back 🇪🇹</h2>
+            <p>Manage lottery rules and inspect the demo environment.<br>
+            Dashboard data is marked unavailable until the admin API is connected.</p>
+          </div>
+          <div class="welcome-icon">🎟️</div>
+        </div>
 
-  <section class="section panel">
-    <h2>Updated lottery rules</h2>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Game</th><th>Ticket price</th><th>Schedule</th><th>Starting prize</th></tr>
-        </thead>
-        <tbody id="rules"></tbody>
-      </table>
-    </div>
-    <p class="muted">
-      Values below are the current proposed settings and must be reviewed
-      before use. Holiday and special-game prize details need admin configuration.
-    </p>
-  </section>
-</main>
+        <div class="warning">
+          <strong>Backend connection status:</strong>
+          <span id="apiStatus">Checking…</span><br>
+          This page does not yet have protected admin APIs for ticket reports or saved draws.
+          The preview draw below is not an official or saved result.
+        </div>
 
-<footer>
-  Ethiopia Lucky Star · Admin interface preview · Payments disabled
-</footer>
+        <div class="stats">
+          <div class="stat"><div class="stat-label">Registered players</div><div class="stat-value" id="playerCount">—</div><div class="stat-foot">Awaiting protected API</div></div>
+          <div class="stat"><div class="stat-label">Demo tickets</div><div class="stat-value" id="ticketCount">—</div><div class="stat-foot">Awaiting protected API</div></div>
+          <div class="stat"><div class="stat-label">Games configured</div><div class="stat-value">8</div><div class="stat-foot">Listed below</div></div>
+          <div class="stat"><div class="stat-label">Payments enabled</div><div class="stat-value">NO</div><div class="stat-foot">Payments disabled</div></div>
+        </div>
+
+        <div class="section-head">
+          <div><h2>Lottery games</h2><p>Current planned rules for Ethiopia Lucky Star.</p></div>
+          <button class="btn btn-secondary" data-jump="games">View all games</button>
+        </div>
+        <div class="games" id="gameCards"></div>
+
+        <div class="panels">
+          <div class="panel">
+            <h3>Demo draw preview</h3>
+            <p class="panel-desc">Generate a six-digit random number for preview only. This does not close a draw, select a winner, or save an official result.</p>
+            <div class="field"><label for="previewGame">Select game</label><select id="previewGame"></select></div>
+            <button class="btn btn-gold" id="previewBtn">Generate preview number</button>
+            <div id="previewResult" class="result hidden" aria-live="polite"></div>
+          </div>
+          <div class="panel">
+            <h3>System checklist</h3>
+            <p class="panel-desc">Items requiring backend implementation before operational use.</p>
+            <table><tbody>
+              <tr><td>Telegram registration</td><td><span class="pill">Existing route</span></td></tr>
+              <tr><td>Demo ticket endpoint</td><td><span class="pill">Existing route</span></td></tr>
+              <tr><td>Secure admin login</td><td>Not implemented</td></tr>
+              <tr><td>Ticket reports API</td><td>Not implemented</td></tr>
+              <tr><td>Saved draw history</td><td>Not implemented</td></tr>
+            </tbody></table>
+          </div>
+        </div>
+      </section>
+
+      <section id="games" class="hidden">
+        <div class="section-head"><div><h2>Games & rules</h2><p>Reference settings for the DEMO version.</p></div></div>
+        <div class="warning">These are display settings only. Editing the text here does not change the server's ticket prices, closing times, or draw rules.</div>
+        <div class="games" id="allGameCards"></div>
+        <div class="panel" style="margin-top:16px">
+          <h3>Prize growth rule</h3>
+          <p class="panel-desc">The requested rule is for the prize to grow after the player count exceeds 30,000, using 0.7 of added player money after the service charge. The exact calculation and service-charge percentage still need to be defined and implemented in the backend. No prize calculations are made by this dashboard.</p>
+        </div>
+      </section>
+
+      <section id="draw" class="hidden">
+        <div class="section-head"><div><h2>Demo draw preview</h2><p>Random number generation only; not a real or saved draw.</p></div></div>
+        <div class="panel" style="max-width:650px">
+          <div class="field"><label for="drawGame">Lottery game</label><select id="drawGame2"></select></div>
+          <button class="btn btn-primary" id="previewBtn2">Generate random preview</button>
+          <div id="previewResult2" class="result hidden" aria-live="polite"></div>
+          <div class="notice">Official draw controls are intentionally unavailable until admin authentication, ticket cutoff rules, duplicate-number handling, and persistent draw-history endpoints are implemented.</div>
+        </div>
+      </section>
+
+      <section id="tickets" class="hidden">
+        <div class="section-head"><div><h2>Demo tickets</h2><p>Ticket reporting requires a protected backend endpoint.</p></div></div>
+        <div class="panel">
+          <div class="empty">Ticket data is not displayed here yet because this backend does not currently provide an authenticated admin ticket-list API.<br><br>No ticket records are fabricated by this page.</div>
+          <button class="btn btn-secondary" id="retryHealth">Check service health</button>
+          <div id="healthResult" class="panel-desc" style="margin-top:12px"></div>
+        </div>
+      </section>
+
+      <div class="footer">Ethiopia Lucky Star · DEMO only · Payments disabled</div>
+    </div>
+  </main>
+</div>
 
 <script>
-  const games = [
-    {id:"daily", name:"Daily Loto", price:"100 ETB", schedule:"Daily · closes 6:00 PM", prize:"30,000 ETB"},
-    {id:"weekly", name:"Weekly Loto", price:"50 ETB", schedule:"Sunday draw", prize:"50,000 ETB"},
-    {id:"monthly", name:"Monthly Loto", price:"50 ETB", schedule:"Monthly draw", prize:"100,000 ETB"},
-    {id:"holiday", name:"Holiday Loto", price:"To configure", schedule:"Ethiopian holidays", prize:"Special prizes"},
-    {id:"accessory", name:"Accessory Loto", price:"To configure", schedule:"To configure", prize:"To configure"},
-    {id:"lebet", name:"Le Bet Loto", price:"To configure", schedule:"To configure", prize:"To configure"},
-    {id:"jemaw", name:"Jemaw Loto", price:"To configure", schedule:"To configure", prize:"To configure"},
-    {id:"beale", name:"Beale Loto", price:"To configure", schedule:"To configure", prize:"To configure"}
-  ];
+const games = [
+  {id:"daily",name:"Daily Loto",icon:"☀️",price:100,prize:30000,detail:"Closes at 6:00 PM · fast-cash concept"},
+  {id:"weekly",name:"Weekly Loto",icon:"📅",price:50,prize:50000,detail:"Sunday draw"},
+  {id:"monthly",name:"Monthly Loto",icon:"🌙",price:50,prize:100000,detail:"Monthly draw"},
+  {id:"holiday",name:"Holiday Loto",icon:"🎉",price:null,prize:null,detail:"Ethiopian holiday calendar and special prizes"},
+  {id:"accessory",name:"Accessory Loto",icon:"🎁",price:null,prize:null,detail:"Prize and schedule to be configured"},
+  {id:"lebet",name:"Le Bet Loto",icon:"🎯",price:null,prize:null,detail:"Prize and schedule to be configured"},
+  {id:"jemaw",name:"Jemaw Loto",icon:"⭐",price:null,prize:null,detail:"Prize and schedule to be configured"},
+  {id:"beale",name:"Beale Loto",icon:"🏆",price:null,prize:null,detail:"Prize and schedule to be configured"}
+];
 
-  const $ = id => document.getElementById(id);
+function birr(value){
+  return value == null ? "To be configured" :
+    value.toLocaleString("en-US") + " ETB";
+}
+function card(g){
+  return `<article class="gamecard">
+    <div class="game-top"><div class="game-icon">${g.icon}</div><span class="game-status">DEMO</span></div>
+    <h3>${g.name}</h3>
+    <div class="price">${birr(g.price)}</div>
+    <div class="prize">Starting prize: ${birr(g.prize)}</div>
+    <div class="game-details">${g.detail}<br>Six digits · 0–9</div>
+  </article>`;
+}
+document.getElementById("gameCards").innerHTML = games.slice(0,4).map(card).join("");
+document.getElementById("allGameCards").innerHTML = games.map(card).join("");
 
-  $("games").innerHTML = games.map(g => `
-    <article class="card">
-      <div class="game-name">${g.name}</div>
-      <div class="price">${g.price}</div>
-      <p class="muted">${g.schedule}</p>
-      <p class="muted">Starting prize: ${g.prize}</p>
-      <span class="tag">Demo configuration</span>
-    </article>
-  `).join("");
+function fillSelect(id){
+  const select = document.getElementById(id);
+  select.innerHTML = games.map(g =>
+    `<option value="${g.id}">${g.name}</option>`).join("");
+}
+["previewGame","drawGame2"].forEach(fillSelect);
 
-  $("game").innerHTML = games.map(g =>
-    `<option value="${g.id}">${g.name}</option>`
-  ).join("");
+function makePreview(selectId,resultId){
+  const game = games.find(g=>g.id===document.getElementById(selectId).value);
+  const number = String(Math.floor(Math.random()*1000000)).padStart(6,"0");
+  document.getElementById(resultId).classList.remove("hidden");
+  document.getElementById(resultId).innerHTML =
+    `<div class="result-label">PREVIEW ONLY · ${game.name}</div>
+     <div class="digits">${number.split("").map(d=>`<span class="digit">${d}</span>`).join("")}</div>
+     <small>This random number is not an official result. It has not been saved and no winner has been selected.</small>`;
+}
+document.getElementById("previewBtn").addEventListener("click",()=>makePreview("previewGame","previewResult"));
+document.getElementById("previewBtn2").addEventListener("click",()=>makePreview("drawGame2","previewResult2"));
 
-  $("rules").innerHTML = games.map(g => `
-    <tr>
-      <td>${g.name}</td><td>${g.price}</td>
-      <td>${g.schedule}</td><td>${g.prize}</td>
-    </tr>
-  `).join("");
-
-  $("drawDate").value = new Date().toISOString().slice(0,10);
-
-  $("generate").addEventListener("click", () => {
-    const result = String(Math.floor(Math.random() * 1000000)).padStart(6, "0");
-    const game = games.find(g => g.id === $("game").value);
-    $("digits").innerHTML = [...result].map(d =>
-      `<span class="digit">${d}</span>`
-    ).join("");
-    $("previewInfo").textContent =
-      `${game.name} · ${$("drawDate").value} · DEMO PREVIEW ONLY`;
-    $("preview").hidden = false;
-    $("save").disabled = true;
+document.querySelectorAll("[data-view]").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    document.querySelectorAll("[data-view]").forEach(b=>b.classList.toggle("active",b===btn));
+    document.querySelectorAll("main section").forEach(s=>s.classList.toggle("hidden",s.id!==btn.dataset.view));
+    const titles={overview:"Dashboard Overview",games:"Games & Rules",draw:"Demo Draw Preview",tickets:"Demo Tickets"};
+    document.getElementById("pageTitle").textContent=titles[btn.dataset.view];
+    window.scrollTo({top:0,behavior:"smooth"});
   });
+});
+document.querySelectorAll("[data-jump]").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    document.querySelector('[data-view="'+btn.dataset.jump+'"]').click();
+  });
+});
+
+async function checkHealth(){
+  const status = document.getElementById("apiStatus");
+  const result = document.getElementById("healthResult");
+  try{
+    const response = await fetch("/health",{cache:"no-store"});
+    const data = await response.json();
+    if(!response.ok) throw new Error("HTTP "+response.status);
+    status.textContent = data.ok
+      ? "Service reachable; payments disabled."
+      : "Service returned an unexpected response.";
+    if(result) result.textContent = JSON.stringify(data);
+  }catch(error){
+    status.textContent = "Unable to reach the health endpoint.";
+    if(result) result.textContent = "Health check failed: "+error.message;
+  }
+}
+document.getElementById("retryHealth").addEventListener("click",checkHealth);
+checkHealth();
 </script>
 </body>
 </html>
