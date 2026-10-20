@@ -26,9 +26,6 @@ GAMES = {"daily", "weekly", "monthly", "holiday", "jemaw", "lebet"}
 
 
 def connect_db():
-    folder = os.path.dirname(DATABASE_PATH)
-    if folder:
-        os.makedirs(folder, exist_ok=True)
     conn = sqlite3.connect(DATABASE_PATH, timeout=20)
     conn.row_factory = sqlite3.Row
     return conn
