@@ -18,7 +18,20 @@ app = FastAPI(title="Ethiopia Lucky Star")
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+from fastapi.responses import FileResponse
+from fastapi import HTTPException
 
+@app.get("/admin", include_in_schema=False)
+async def admin_page():
+    admin_file = STATIC_DIR / "admin.html"
+
+    if not admin_file.is_file():
+        raise HTTPException(
+            status_code=404,
+            detail="Admin page missing: static/admin.html"
+        )
+
+    return FileResponse(str(admin_file))
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
 WEB_APP_URL = os.getenv(
     "WEB_APP_URL",
