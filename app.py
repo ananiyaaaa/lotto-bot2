@@ -100,39 +100,6 @@ def initialize_db():
             )
         """)
 
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS demo_wallets (
-                telegram_id TEXT PRIMARY KEY,
-                balance_birr INTEGER NOT NULL DEFAULT 0 CHECK(balance_birr >= 0),
-                updated_at INTEGER NOT NULL,
-                FOREIGN KEY (telegram_id) REFERENCES players(telegram_id)
-            )
-        """)
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS demo_wallet_ledger (
-                ledger_id TEXT PRIMARY KEY,
-                telegram_id TEXT NOT NULL,
-                entry_type TEXT NOT NULL,
-                amount_birr INTEGER NOT NULL,
-                reference TEXT NOT NULL UNIQUE,
-                created_at INTEGER NOT NULL,
-                note TEXT NOT NULL DEFAULT '',
-                FOREIGN KEY (telegram_id) REFERENCES players(telegram_id)
-            )
-        """)
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS demo_withdrawals (
-                request_id TEXT PRIMARY KEY,
-                telegram_id TEXT NOT NULL,
-                amount_birr INTEGER NOT NULL CHECK(amount_birr > 0),
-                status TEXT NOT NULL DEFAULT 'PENDING',
-                created_at INTEGER NOT NULL,
-                reviewed_at INTEGER,
-                admin_note TEXT NOT NULL DEFAULT '',
-                FOREIGN KEY (telegram_id) REFERENCES players(telegram_id)
-            )
-        """)
-
         # Safe migrations for existing SQLite databases.
         existing = {
             row["name"] for row in
@@ -151,23 +118,6 @@ def initialize_db():
                 conn.execute(
                     f"ALTER TABLE players ADD COLUMN {column} {definition}"
                 )
-
-        # Canonicalize old digit JSON before enforcing uniqueness, because older
-        # rows may contain whitespace while new rows use compact JSON.
-        for old_ticket in conn.execute("SELECT rowid, digits_json FROM demo_tickets").fetchall():
-            try:
-                canonical_digits = json.dumps(json.loads(old_ticket["digits_json"]), separators=(",", ":"))
-                conn.execute("UPDATE demo_tickets SET digits_json = ? WHERE rowid = ?", (canonical_digits, old_ticket["rowid"]))
-            except (TypeError, ValueError):
-                continue
-        # If old demo data already contains duplicates, keep the earliest ticket only.
-        conn.execute("""
-            DELETE FROM demo_tickets
-            WHERE rowid NOT IN (
-                SELECT MIN(rowid) FROM demo_tickets GROUP BY game_id, digits_json
-            )
-        """)
-        conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_demo_ticket_game_digits ON demo_tickets(game_id, digits_json)")
 
 
 initialize_db()
@@ -503,78 +453,35 @@ async def demo_ticket(body: TicketInput, request: Request):
 
     if body.game_id not in GAMES:
         raise HTTPException(status_code=422, detail="Unknown game.")
+
     if len(body.digits) != 6:
-        raise HTTPException(status_code=422, detail="Enter exactly six digits.")
-    if any(n < 0 or n > 9 for n in body.digits):
-        raise HTTPException(status_code=422, detail="Digits must be from 0 to 9.")
-
-    # Demo ticket costs follow the game prices shown in the player app.
-    # Games without a published price use a 50 demo-birr ticket cost.
-    ticket_cost = {"daily": 100, "weekly": 50, "monthly": 50}.get(body.game_id, 50)
-    digits_json = json.dumps(body.digits, separators=(",", ":"))
-    ticket_id = "DEMO-" + secrets.token_hex(4).upper()
-    now = int(time.time())
-
-    try:
-        with connect_db() as conn:
-            conn.execute("BEGIN IMMEDIATE")
-            conn.execute(
-                "INSERT INTO demo_wallets (telegram_id, balance_birr, updated_at) VALUES (?, 0, ?) ON CONFLICT(telegram_id) DO NOTHING",
-                (player["telegram_id"], now),
-            )
-            # The same six-digit number may be used once in each game, globally.
-            duplicate = conn.execute(
-                "SELECT ticket_id FROM demo_tickets WHERE game_id = ? AND digits_json = ? LIMIT 1",
-                (body.game_id, digits_json),
-            ).fetchone()
-            if duplicate:
-                raise HTTPException(
-                    status_code=409,
-                    detail="That number has already been taken in this game. Choose another number. The number may still be available in a different game.",
-                )
-
-            wallet = conn.execute(
-                "SELECT balance_birr FROM demo_wallets WHERE telegram_id = ?",
-                (player["telegram_id"],),
-            ).fetchone()
-            if not wallet or wallet["balance_birr"] < ticket_cost:
-                balance = wallet["balance_birr"] if wallet else 0
-                raise HTTPException(
-                    status_code=402,
-                    detail=f"Insufficient demo balance. This {body.game_id.title()} Loto ticket costs {ticket_cost} demo ETB and your balance is {balance}. Please request a demo deposit and wait for admin approval before choosing a ticket number.",
-                )
-
-            conn.execute(
-                "UPDATE demo_wallets SET balance_birr = balance_birr - ?, updated_at = ? WHERE telegram_id = ?",
-                (ticket_cost, now, player["telegram_id"]),
-            )
-            conn.execute("""
-                INSERT INTO demo_tickets
-                    (ticket_id, telegram_id, game_id, digits_json, created_at)
-                VALUES (?, ?, ?, ?, ?)
-            """, (ticket_id, player["telegram_id"], body.game_id, digits_json, now))
-            conn.execute("""
-                INSERT INTO demo_wallet_ledger
-                    (ledger_id, telegram_id, entry_type, amount_birr, reference, created_at, note)
-                VALUES (?, ?, 'DEMO_TICKET_PURCHASE', ?, ?, ?, ?)
-            """, (
-                "LED-" + secrets.token_hex(6).upper(), player["telegram_id"],
-                -ticket_cost, "ticket:" + ticket_id, now,
-                f"{body.game_id.title()} Loto demo ticket {''.join(map(str, body.digits))}",
-            ))
-    except sqlite3.IntegrityError:
         raise HTTPException(
-            status_code=409,
-            detail="That number has already been taken in this game. Choose another number.",
+            status_code=422, detail="Enter exactly six digits."
         )
+
+    if any(n < 0 or n > 9 for n in body.digits):
+        raise HTTPException(
+            status_code=422, detail="Digits must be from 0 to 9."
+        )
+
+    ticket_id = "DEMO-" + secrets.token_hex(4).upper()
+    with connect_db() as conn:
+        conn.execute("""
+            INSERT INTO demo_tickets
+                (ticket_id, telegram_id, game_id, digits_json, created_at)
+            VALUES (?, ?, ?, ?, ?)
+        """, (
+            ticket_id,
+            player["telegram_id"],
+            body.game_id,
+            json.dumps(body.digits),
+            int(time.time()),
+        ))
 
     return {
         "ok": True,
         "ticket_id": ticket_id,
-        "digits": "".join(map(str, body.digits)),
-        "game_id": body.game_id,
-        "cost_birr": ticket_cost,
-        "message": f"Demo ticket saved. {ticket_cost} demo ETB deducted from your demo wallet. No real payment taken.",
+        "message": "Demo ticket saved. No payment taken.",
         "mode": "DEMO",
         "payments_enabled": False,
     }
@@ -661,109 +568,23 @@ async def admin_review_demo_payment(payment_id: str, body: DemoPaymentReviewInpu
                                     request: Request):
     require_admin(request)
     decision = "APPROVED_DEMO" if body.decision == "approve" else "REJECTED_DEMO"
-    now = int(time.time())
     with connect_db() as conn:
-        conn.execute("BEGIN IMMEDIATE")
         row = conn.execute(
-            "SELECT payment_id, telegram_id, amount_birr, status FROM demo_payment_requests WHERE payment_id = ?",
+            "SELECT payment_id, status FROM demo_payment_requests WHERE payment_id = ?",
             (payment_id,)
         ).fetchone()
         if not row:
             raise HTTPException(404, "Demo submission not found.")
         if row["status"] != "PENDING":
             raise HTTPException(409, "This submission has already been reviewed.")
-        conn.execute("UPDATE demo_payment_requests SET status = ?, reviewed_at = ?, admin_note = ? WHERE payment_id = ? AND status = 'PENDING'",
-                     (decision, now, body.note.strip(), payment_id))
-        if decision == "APPROVED_DEMO":
-            conn.execute("INSERT INTO demo_wallets (telegram_id, balance_birr, updated_at) VALUES (?, 0, ?) ON CONFLICT(telegram_id) DO NOTHING", (row["telegram_id"], now))
-            conn.execute("UPDATE demo_wallets SET balance_birr = balance_birr + ?, updated_at = ? WHERE telegram_id = ?",
-                         (row["amount_birr"], now, row["telegram_id"]))
-            conn.execute("INSERT INTO demo_wallet_ledger (ledger_id, telegram_id, entry_type, amount_birr, reference, created_at, note) VALUES (?, ?, 'DEMO_DEPOSIT', ?, ?, ?, ?)",
-                         ("LED-" + secrets.token_hex(6).upper(), row["telegram_id"], row["amount_birr"], "deposit:" + payment_id, now, "Admin-approved simulated deposit"))
-    try:
-        message = (f"⭐ Ethiopia Lucky Star demo deposit {decision.lower().replace('_', ' ')}. "
-                   + (f"{row['amount_birr']} demo ETB was added to your demo wallet." if decision == "APPROVED_DEMO" else "No wallet credit was added.")
-                   + " This is a simulation only; no real payment was verified.")
-        await telegram_call("sendMessage", {"chat_id": row["telegram_id"], "text": message})
-    except Exception:
-        pass
+        conn.execute("""
+            UPDATE demo_payment_requests
+            SET status = ?, reviewed_at = ?, admin_note = ?
+            WHERE payment_id = ? AND status = 'PENDING'
+        """, (decision, int(time.time()), body.note.strip(), payment_id))
     return {"ok": True, "payment_id": payment_id, "status": decision,
-            "message": "Demo status updated. Approval adds simulated demo balance only; no real transfer was verified.",
+            "message": "Demo status updated only. This does not verify a real transfer or activate a ticket.",
             "mode": "DEMO", "payments_enabled": False}
-
-
-@app.get("/api/wallet")
-async def get_demo_wallet(request: Request):
-    _, player = registered_player(request)
-    with connect_db() as conn:
-        conn.execute("INSERT INTO demo_wallets (telegram_id, balance_birr, updated_at) VALUES (?, 0, ?) ON CONFLICT(telegram_id) DO NOTHING", (player["telegram_id"], int(time.time())))
-        wallet = conn.execute("SELECT balance_birr, updated_at FROM demo_wallets WHERE telegram_id = ?", (player["telegram_id"],)).fetchone()
-        ledger = conn.execute("SELECT ledger_id, entry_type, amount_birr, reference, created_at, note FROM demo_wallet_ledger WHERE telegram_id = ? ORDER BY created_at DESC LIMIT 30", (player["telegram_id"],)).fetchall()
-    return {"ok": True, "balance_birr": wallet["balance_birr"], "ledger": [dict(row) for row in ledger], "mode": "DEMO", "payments_enabled": False}
-
-
-class DemoWithdrawalInput(BaseModel):
-    amount_birr: int = Field(gt=0, le=1000000)
-
-class DemoWithdrawalReviewInput(BaseModel):
-    decision: str = Field(pattern=r"^(approve|reject)$")
-    note: str = Field(default="", max_length=300)
-
-@app.post("/api/withdrawals")
-async def create_demo_withdrawal(body: DemoWithdrawalInput, request: Request):
-    _, player = registered_player(request)
-    now = int(time.time())
-    request_id = "DEMO-WD-" + secrets.token_hex(5).upper()
-    with connect_db() as conn:
-        conn.execute("BEGIN IMMEDIATE")
-        conn.execute("INSERT INTO demo_wallets (telegram_id, balance_birr, updated_at) VALUES (?, 0, ?) ON CONFLICT(telegram_id) DO NOTHING", (player["telegram_id"], now))
-        wallet = conn.execute("SELECT balance_birr FROM demo_wallets WHERE telegram_id = ?", (player["telegram_id"],)).fetchone()
-        if body.amount_birr > wallet["balance_birr"]:
-            raise HTTPException(400, "Insufficient demo wallet balance.")
-        conn.execute("UPDATE demo_wallets SET balance_birr = balance_birr - ?, updated_at = ? WHERE telegram_id = ?", (body.amount_birr, now, player["telegram_id"]))
-        conn.execute("INSERT INTO demo_withdrawals (request_id, telegram_id, amount_birr, status, created_at) VALUES (?, ?, ?, 'PENDING', ?)", (request_id, player["telegram_id"], body.amount_birr, now))
-        conn.execute("INSERT INTO demo_wallet_ledger (ledger_id, telegram_id, entry_type, amount_birr, reference, created_at, note) VALUES (?, ?, 'DEMO_WITHDRAWAL_HOLD', ?, ?, ?, ?)", ("LED-" + secrets.token_hex(6).upper(), player["telegram_id"], -body.amount_birr, "withdrawal-hold:" + request_id, now, "Reserved for simulated withdrawal request"))
-    try:
-        await telegram_call("sendMessage", {"chat_id": player["telegram_id"], "text": f"Your Ethiopia Lucky Star demo withdrawal request for {body.amount_birr} demo ETB was submitted for review. No real money will be sent."})
-    except Exception:
-        pass
-    return {"ok": True, "request_id": request_id, "status": "PENDING", "message": "Demo withdrawal request submitted. No real payout will be made.", "mode": "DEMO", "payments_enabled": False}
-
-@app.get("/api/my-withdrawals")
-async def my_demo_withdrawals(request: Request):
-    _, player = registered_player(request)
-    with connect_db() as conn:
-        rows = conn.execute("SELECT request_id, amount_birr, status, created_at, reviewed_at, admin_note FROM demo_withdrawals WHERE telegram_id = ? ORDER BY created_at DESC LIMIT 50", (player["telegram_id"],)).fetchall()
-    return {"ok": True, "withdrawals": [dict(row) for row in rows], "mode": "DEMO", "payments_enabled": False}
-
-@app.get("/api/admin/withdrawals")
-async def admin_list_demo_withdrawals(request: Request):
-    require_admin(request)
-    with connect_db() as conn:
-        rows = conn.execute("SELECT w.request_id, w.telegram_id, w.amount_birr, w.status, w.created_at, w.reviewed_at, w.admin_note, COALESCE(NULLIF(p.display_name, ''), p.first_name, 'Player') AS player_name FROM demo_withdrawals w LEFT JOIN players p ON p.telegram_id = w.telegram_id ORDER BY CASE w.status WHEN 'PENDING' THEN 0 ELSE 1 END, w.created_at DESC LIMIT 500").fetchall()
-    return {"ok": True, "withdrawals": [dict(row) for row in rows], "mode": "DEMO", "payments_enabled": False}
-
-@app.post("/api/admin/withdrawals/{request_id}/review")
-async def admin_review_demo_withdrawal(request_id: str, body: DemoWithdrawalReviewInput, request: Request):
-    require_admin(request)
-    decision = "APPROVED_DEMO" if body.decision == "approve" else "REJECTED_DEMO"
-    now = int(time.time())
-    with connect_db() as conn:
-        conn.execute("BEGIN IMMEDIATE")
-        row = conn.execute("SELECT request_id, telegram_id, amount_birr, status FROM demo_withdrawals WHERE request_id = ?", (request_id,)).fetchone()
-        if not row:
-            raise HTTPException(404, "Demo withdrawal request not found.")
-        if row["status"] != "PENDING":
-            raise HTTPException(409, "This withdrawal has already been reviewed.")
-        conn.execute("UPDATE demo_withdrawals SET status = ?, reviewed_at = ?, admin_note = ? WHERE request_id = ? AND status = 'PENDING'", (decision, now, body.note.strip(), request_id))
-        if decision == "REJECTED_DEMO":
-            conn.execute("UPDATE demo_wallets SET balance_birr = balance_birr + ?, updated_at = ? WHERE telegram_id = ?", (row["amount_birr"], now, row["telegram_id"]))
-            conn.execute("INSERT INTO demo_wallet_ledger (ledger_id, telegram_id, entry_type, amount_birr, reference, created_at, note) VALUES (?, ?, 'DEMO_WITHDRAWAL_REFUND', ?, ?, ?, ?)", ("LED-" + secrets.token_hex(6).upper(), row["telegram_id"], row["amount_birr"], "withdrawal-refund:" + request_id, now, "Refunded reserved demo balance after rejection"))
-    try:
-        await telegram_call("sendMessage", {"chat_id": row["telegram_id"], "text": f"Your Ethiopia Lucky Star demo withdrawal {decision.lower().replace('_', ' ')} for {row['amount_birr']} demo ETB. " + ("The reserved demo balance has been returned to your wallet." if decision == "REJECTED_DEMO" else "This is only a simulated approval; no money was sent.")})
-    except Exception:
-        pass
-    return {"ok": True, "request_id": request_id, "status": decision, "message": "Demo withdrawal reviewed; no real payout occurred.", "mode": "DEMO", "payments_enabled": False}
 
 
 @app.post("/telegram/webhook")
