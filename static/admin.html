@@ -1,20 +1,71 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ethiopia Lucky Star — Demo Review</title>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ethiopia Lucky Star — Demo Admin</title>
 <style>
-:root{color-scheme:dark;--bg:#073d2c;--panel:#104b37;--gold:#f6c453;--text:#fff9e9;--muted:#c2d9ca}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px system-ui,Arial;padding:20px}main{max-width:1100px;margin:auto}.panel{background:var(--panel);border:1px solid #f6c45344;border-radius:16px;padding:18px;margin:14px 0}h1{font-size:clamp(24px,4vw,36px)}p,small{color:var(--muted);line-height:1.5}input,button{font:inherit;border-radius:10px;padding:11px;border:1px solid #ffffff35}input{background:#062f24;color:white;width:100%;margin:6px 0 12px}button{cursor:pointer;font-weight:800;background:var(--gold);color:#153c2c;border:0;margin:4px}.secondary{background:#ffffff15;color:white;border:1px solid #ffffff35}.reject{background:#8e3030;color:white}.warning{padding:12px;background:#f6c45315;border:1px solid #f6c45355;border-radius:10px}table{width:100%;border-collapse:collapse;min-width:760px}th,td{text-align:left;padding:10px;border-bottom:1px solid #ffffff20;vertical-align:top}.tablewrap{overflow:auto}.status{font-weight:800}
-</style></head><body><main><h1>🇪🇹 Ethiopia Lucky Star — Admin Review</h1>
-<div class="warning"><b>DEMO ONLY.</b> This dashboard reviews simulated submissions. It does not verify real transfers, collect money, approve paid tickets, or enable cash prizes.</div>
-<section class="panel"><h2>Admin access</h2><label for="token">ADMIN_TOKEN from Render environment variables</label><input id="token" type="password" autocomplete="off" placeholder="Paste admin token here"><button onclick="saveToken()">Use token</button><button class="secondary" onclick="loadPayments()">Refresh queue</button><p id="msg" role="status"></p></section>
+:root{color-scheme:dark;--bg:#073d2c;--panel:#104b37;--gold:#f6c453;--text:#fff9e9;--muted:#c2d9ca}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px system-ui,Arial;padding:20px}main{max-width:1100px;margin:auto}.panel{background:var(--panel);border:1px solid #f6c45344;border-radius:16px;padding:18px;margin:14px 0}h1{font-size:clamp(24px,4vw,36px)}p,small{color:var(--muted);line-height:1.5}input,button{font:inherit;border-radius:10px;padding:11px;border:1px solid #ffffff35}input{background:#062f24;color:white;width:100%;margin:6px 0 12px}button{cursor:pointer;font-weight:800;background:var(--gold);color:#153c2c;border:0;margin:4px}.secondary{background:#ffffff15;color:white;border:1px solid #ffffff35}.reject{background:#8e3030;color:white}.warning{padding:12px;background:#f6c45315;border:1px solid #f6c45355;border-radius:10px}table{width:100%;border-collapse:collapse;min-width:760px}th,td{text-align:left;padding:10px;border-bottom:1px solid #ffffff20;vertical-align:top}.tablewrap{overflow:auto}.status{font-weight:800}button:disabled{opacity:.55;cursor:wait}
+</style></head>
+<body><main>
+<h1>🇪🇹 Ethiopia Lucky Star — Admin Review</h1>
+<div class="warning"><b>DEMO ONLY.</b> This dashboard reviews simulated submissions. It does not verify real transfers, collect money, approve paid tickets, or send real withdrawals.</div>
+<section class="panel"><h2>Admin access</h2><label for="token">ADMIN_TOKEN from Render environment variables</label><input id="token" type="password" autocomplete="off" placeholder="Paste admin token here"><button id="useToken" type="button">Use token</button><button id="refreshAll" class="secondary" type="button">Refresh queue</button><p id="msg" role="status" aria-live="polite">Enter your admin token to load the demo queues.</p></section>
 <section class="panel"><h2>Demo deposit submissions</h2><div class="tablewrap"><table><thead><tr><th>Submitted</th><th>Player</th><th>Method / Amount</th><th>Reference</th><th>Game</th><th>Status</th><th>Review</th></tr></thead><tbody id="rows"><tr><td colspan="7">Enter admin token to load submissions.</td></tr></tbody></table></div></section>
-<section class="panel"><h2>Demo withdrawal requests</h2><p>Approving is a simulation only and does not send money. Rejecting returns the reserved demo balance to the player's demo wallet.</p><button class="secondary" onclick="loadWithdrawals()">Refresh withdrawals</button><div class="tablewrap"><table><thead><tr><th>Submitted</th><th>Player</th><th>Amount</th><th>Request ID</th><th>Status</th><th>Review</th></tr></thead><tbody id="withdrawalRows"><tr><td colspan="6">Enter admin token to load withdrawals.</td></tr></tbody></table></div></section>
-</main><script>
-let adminToken=sessionStorage.getItem('elsAdminToken')||'';document.getElementById('token').value=adminToken;
-function saveToken(){adminToken=document.getElementById('token').value.trim();if(adminToken)sessionStorage.setItem('elsAdminToken',adminToken);else sessionStorage.removeItem('elsAdminToken');loadPayments();loadWithdrawals()}
-function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function showMsg(s){document.getElementById('msg').textContent=s}
-async function call(path,options={}){const r=await fetch(path,{...options,headers:{'Content-Type':'application/json','X-Admin-Token':adminToken,...(options.headers||{})}});let d={};try{d=await r.json()}catch(e){}if(!r.ok)throw new Error(d.detail||`Request failed (${r.status})`);return d}
-async function loadPayments(){if(!adminToken){showMsg('Enter ADMIN_TOKEN first.');return}try{const d=await call('/api/admin/demo-payments');const rows=document.getElementById('rows');if(!d.payments.length){rows.innerHTML='<tr><td colspan="7">No demo submissions yet.</td></tr>';return}rows.innerHTML=d.payments.map(p=>`<tr><td>${new Date(p.created_at*1000).toLocaleString()}</td><td>${esc(p.player_name)}<br><small>Telegram ID: ${esc(p.telegram_id)}</small></td><td>${esc(p.method.toUpperCase())}<br>${esc(p.amount_birr)} demo birr</td><td>${esc(p.reference)}<br><small>${esc(p.payment_id)}</small></td><td>${esc(p.game_id)}</td><td class="status">${esc(p.status)}</td><td>${p.status==='PENDING'?`<button onclick="review('${esc(p.payment_id)}','approve')">Approve demo</button><button class="reject" onclick="review('${esc(p.payment_id)}','reject')">Reject</button>`:'Reviewed'}<br><small>${esc(p.admin_note||'')}</small></td></tr>`).join('');showMsg(`Loaded ${d.payments.length} demo submission(s).`)}catch(e){showMsg(e.message)}}
-async function review(id,decision){const note=prompt('Optional admin note (demo only):','')??null;if(note===null)return;try{await call('/api/admin/demo-payments/'+encodeURIComponent(id)+'/review',{method:'POST',body:JSON.stringify({decision,note})});showMsg('Demo status updated. No real payment was verified.');await loadPayments()}catch(e){showMsg(e.message)}}
-async function loadWithdrawals(){if(!adminToken)return;try{const d=await call('/api/admin/withdrawals');const rows=document.getElementById('withdrawalRows');if(!d.withdrawals.length){rows.innerHTML='<tr><td colspan="6">No demo withdrawal requests yet.</td></tr>';return}rows.innerHTML=d.withdrawals.map(w=>`<tr><td>${new Date(w.created_at*1000).toLocaleString()}</td><td>${esc(w.player_name)}<br><small>Telegram ID: ${esc(w.telegram_id)}</small></td><td>${esc(w.amount_birr)} demo ETB</td><td>${esc(w.request_id)}</td><td class="status">${esc(w.status)}</td><td>${w.status==='PENDING'?`<button onclick="reviewWithdrawal('${esc(w.request_id)}','approve')">Approve demo</button><button class="reject" onclick="reviewWithdrawal('${esc(w.request_id)}','reject')">Reject / refund demo</button>`:'Reviewed'}<br><small>${esc(w.admin_note||'')}</small></td></tr>`).join('')}catch(e){showMsg(e.message)}}
-async function reviewWithdrawal(id,decision){const note=prompt('Optional admin note (demo only):','')??null;if(note===null)return;try{await call('/api/admin/withdrawals/'+encodeURIComponent(id)+'/review',{method:'POST',body:JSON.stringify({decision,note})});showMsg('Demo withdrawal reviewed. No real money was sent.');await loadWithdrawals()}catch(e){showMsg(e.message)}}
-if(adminToken){loadPayments();loadWithdrawals()}
+<section class="panel"><h2>Demo withdrawal requests</h2><p>Approving is a simulation only and does not send money. Rejecting returns reserved demo balance to the player's demo wallet.</p><div class="tablewrap"><table><thead><tr><th>Submitted</th><th>Player</th><th>Amount</th><th>Request ID</th><th>Status</th><th>Review</th></tr></thead><tbody id="withdrawalRows"><tr><td colspan="6">Enter admin token to load withdrawals.</td></tr></tbody></table></div></section>
+</main>
+<script>
+'use strict';
+const tokenInput=document.getElementById('token');
+const messageEl=document.getElementById('msg');
+let adminToken='';
+try{adminToken=sessionStorage.getItem('elsAdminToken')||'';}catch(e){}
+tokenInput.value=adminToken;
+function esc(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function showMsg(message){messageEl.textContent=message;}
+async function api(path,options={}){
+  const headers=new Headers(options.headers||{});
+  headers.set('X-Admin-Token',adminToken);
+  if(options.body) headers.set('Content-Type','application/json');
+  const response=await fetch(path,{...options,headers});
+  const raw=await response.text();
+  let data={};
+  try{data=raw?JSON.parse(raw):{};}catch(e){data={detail:raw||`HTTP ${response.status}`};}
+  if(!response.ok) throw new Error(data.detail||`Request failed (HTTP ${response.status})`);
+  return data;
+}
+async function loadPayments(){
+  if(!adminToken){showMsg('Enter ADMIN_TOKEN first.');return;}
+  const rows=document.getElementById('rows');rows.innerHTML='<tr><td colspan="7">Loading…</td></tr>';
+  try{
+    const data=await api('/api/admin/demo-payments');const payments=Array.isArray(data.payments)?data.payments:[];
+    if(!payments.length){rows.innerHTML='<tr><td colspan="7">No demo submissions yet.</td></tr>';showMsg('Admin token accepted. No demo deposit submissions yet.');return;}
+    rows.innerHTML=payments.map(p=>`<tr><td>${new Date(Number(p.created_at)*1000).toLocaleString()}</td><td>${esc(p.player_name)}<br><small>Telegram ID: ${esc(p.telegram_id)}</small></td><td>${esc(String(p.method||'').toUpperCase())}<br>${esc(p.amount_birr)} demo birr</td><td>${esc(p.reference)}<br><small>${esc(p.payment_id)}</small></td><td>${esc(p.game_id)}</td><td class="status">${esc(p.status)}</td><td>${p.status==='PENDING'?`<button type="button" data-payment-id="${esc(p.payment_id)}" data-decision="approve">Approve demo</button><button type="button" class="reject" data-payment-id="${esc(p.payment_id)}" data-decision="reject">Reject</button>`:'Reviewed'}<br><small>${esc(p.admin_note||'')}</small></td></tr>`).join('');
+    showMsg(`Admin token accepted. Loaded ${payments.length} demo deposit submission(s).`);
+  }catch(error){rows.innerHTML='<tr><td colspan="7">Could not load submissions.</td></tr>';showMsg(`Deposit queue error: ${error.message}`);}
+}
+async function loadWithdrawals(){
+  if(!adminToken)return;
+  const rows=document.getElementById('withdrawalRows');rows.innerHTML='<tr><td colspan="6">Loading…</td></tr>';
+  try{
+    const data=await api('/api/admin/withdrawals');const withdrawals=Array.isArray(data.withdrawals)?data.withdrawals:[];
+    if(!withdrawals.length){rows.innerHTML='<tr><td colspan="6">No demo withdrawal requests yet.</td></tr>';return;}
+    rows.innerHTML=withdrawals.map(w=>`<tr><td>${new Date(Number(w.created_at)*1000).toLocaleString()}</td><td>${esc(w.player_name)}<br><small>Telegram ID: ${esc(w.telegram_id)}</small></td><td>${esc(w.amount_birr)} demo ETB</td><td>${esc(w.request_id)}</td><td class="status">${esc(w.status)}</td><td>${w.status==='PENDING'?`<button type="button" data-withdrawal-id="${esc(w.request_id)}" data-decision="approve">Approve demo</button><button type="button" class="reject" data-withdrawal-id="${esc(w.request_id)}" data-decision="reject">Reject / refund demo</button>`:'Reviewed'}<br><small>${esc(w.admin_note||'')}</small></td></tr>`).join('');
+  }catch(error){rows.innerHTML='<tr><td colspan="6">Could not load withdrawals.</td></tr>';showMsg(`Withdrawal queue error: ${error.message}`);}
+}
+async function reviewDeposit(id,decision){const note=prompt('Optional admin note (demo only):','');if(note===null)return;try{await api('/api/admin/demo-payments/'+encodeURIComponent(id)+'/review',{method:'POST',body:JSON.stringify({decision,note})});showMsg('Demo deposit status updated. No real payment was verified.');await loadPayments();}catch(error){showMsg(`Deposit review error: ${error.message}`);}}
+async function reviewWithdrawal(id,decision){const note=prompt('Optional admin note (demo only):','');if(note===null)return;try{await api('/api/admin/withdrawals/'+encodeURIComponent(id)+'/review',{method:'POST',body:JSON.stringify({decision,note})});showMsg('Demo withdrawal reviewed. No real money was sent.');await loadWithdrawals();}catch(error){showMsg(`Withdrawal review error: ${error.message}`);}}
+document.getElementById('useToken').addEventListener('click',async()=>{
+  adminToken=tokenInput.value.trim();
+  if(!adminToken){try{sessionStorage.removeItem('elsAdminToken');}catch(e){}showMsg('Please enter the ADMIN_TOKEN value from Render.');return;}
+  try{sessionStorage.setItem('elsAdminToken',adminToken);}catch(e){}
+  const button=document.getElementById('useToken');button.disabled=true;showMsg('Checking admin token and loading queues…');
+  await Promise.all([loadPayments(),loadWithdrawals()]);button.disabled=false;
+});
+document.getElementById('refreshAll').addEventListener('click',async()=>{await Promise.all([loadPayments(),loadWithdrawals()]);});
+document.addEventListener('click',event=>{
+  const button=event.target.closest('button[data-payment-id],button[data-withdrawal-id]');if(!button)return;
+  if(button.dataset.paymentId)reviewDeposit(button.dataset.paymentId,button.dataset.decision);
+  if(button.dataset.withdrawalId)reviewWithdrawal(button.dataset.withdrawalId,button.dataset.decision);
+});
+if(adminToken){loadPayments();loadWithdrawals();}
 </script></body></html>
