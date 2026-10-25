@@ -152,6 +152,23 @@ def initialize_db():
                     f"ALTER TABLE players ADD COLUMN {column} {definition}"
                 )
 
+        # Canonicalize old digit JSON before enforcing uniqueness, because older
+        # rows may contain whitespace while new rows use compact JSON.
+        for old_ticket in conn.execute("SELECT rowid, digits_json FROM demo_tickets").fetchall():
+            try:
+                canonical_digits = json.dumps(json.loads(old_ticket["digits_json"]), separators=(",", ":"))
+                conn.execute("UPDATE demo_tickets SET digits_json = ? WHERE rowid = ?", (canonical_digits, old_ticket["rowid"]))
+            except (TypeError, ValueError):
+                continue
+        # If old demo data already contains duplicates, keep the earliest ticket only.
+        conn.execute("""
+            DELETE FROM demo_tickets
+            WHERE rowid NOT IN (
+                SELECT MIN(rowid) FROM demo_tickets GROUP BY game_id, digits_json
+            )
+        """)
+        conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_demo_ticket_game_digits ON demo_tickets(game_id, digits_json)")
+
 
 initialize_db()
 
@@ -486,35 +503,78 @@ async def demo_ticket(body: TicketInput, request: Request):
 
     if body.game_id not in GAMES:
         raise HTTPException(status_code=422, detail="Unknown game.")
-
     if len(body.digits) != 6:
-        raise HTTPException(
-            status_code=422, detail="Enter exactly six digits."
-        )
-
+        raise HTTPException(status_code=422, detail="Enter exactly six digits.")
     if any(n < 0 or n > 9 for n in body.digits):
-        raise HTTPException(
-            status_code=422, detail="Digits must be from 0 to 9."
-        )
+        raise HTTPException(status_code=422, detail="Digits must be from 0 to 9.")
 
+    # Demo ticket costs follow the game prices shown in the player app.
+    # Games without a published price use a 50 demo-birr ticket cost.
+    ticket_cost = {"daily": 100, "weekly": 50, "monthly": 50}.get(body.game_id, 50)
+    digits_json = json.dumps(body.digits, separators=(",", ":"))
     ticket_id = "DEMO-" + secrets.token_hex(4).upper()
-    with connect_db() as conn:
-        conn.execute("""
-            INSERT INTO demo_tickets
-                (ticket_id, telegram_id, game_id, digits_json, created_at)
-            VALUES (?, ?, ?, ?, ?)
-        """, (
-            ticket_id,
-            player["telegram_id"],
-            body.game_id,
-            json.dumps(body.digits),
-            int(time.time()),
-        ))
+    now = int(time.time())
+
+    try:
+        with connect_db() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            conn.execute(
+                "INSERT INTO demo_wallets (telegram_id, balance_birr, updated_at) VALUES (?, 0, ?) ON CONFLICT(telegram_id) DO NOTHING",
+                (player["telegram_id"], now),
+            )
+            # The same six-digit number may be used once in each game, globally.
+            duplicate = conn.execute(
+                "SELECT ticket_id FROM demo_tickets WHERE game_id = ? AND digits_json = ? LIMIT 1",
+                (body.game_id, digits_json),
+            ).fetchone()
+            if duplicate:
+                raise HTTPException(
+                    status_code=409,
+                    detail="That number has already been taken in this game. Choose another number. The number may still be available in a different game.",
+                )
+
+            wallet = conn.execute(
+                "SELECT balance_birr FROM demo_wallets WHERE telegram_id = ?",
+                (player["telegram_id"],),
+            ).fetchone()
+            if not wallet or wallet["balance_birr"] < ticket_cost:
+                balance = wallet["balance_birr"] if wallet else 0
+                raise HTTPException(
+                    status_code=402,
+                    detail=f"Insufficient demo balance. This {body.game_id.title()} Loto ticket costs {ticket_cost} demo ETB and your balance is {balance}. Please request a demo deposit and wait for admin approval before choosing a ticket number.",
+                )
+
+            conn.execute(
+                "UPDATE demo_wallets SET balance_birr = balance_birr - ?, updated_at = ? WHERE telegram_id = ?",
+                (ticket_cost, now, player["telegram_id"]),
+            )
+            conn.execute("""
+                INSERT INTO demo_tickets
+                    (ticket_id, telegram_id, game_id, digits_json, created_at)
+                VALUES (?, ?, ?, ?, ?)
+            """, (ticket_id, player["telegram_id"], body.game_id, digits_json, now))
+            conn.execute("""
+                INSERT INTO demo_wallet_ledger
+                    (ledger_id, telegram_id, entry_type, amount_birr, reference, created_at, note)
+                VALUES (?, ?, 'DEMO_TICKET_PURCHASE', ?, ?, ?, ?)
+            """, (
+                "LED-" + secrets.token_hex(6).upper(), player["telegram_id"],
+                -ticket_cost, "ticket:" + ticket_id, now,
+                f"{body.game_id.title()} Loto demo ticket {''.join(map(str, body.digits))}",
+            ))
+    except sqlite3.IntegrityError:
+        raise HTTPException(
+            status_code=409,
+            detail="That number has already been taken in this game. Choose another number.",
+        )
 
     return {
         "ok": True,
         "ticket_id": ticket_id,
-        "message": "Demo ticket saved. No payment taken.",
+        "digits": "".join(map(str, body.digits)),
+        "game_id": body.game_id,
+        "cost_birr": ticket_cost,
+        "message": f"Demo ticket saved. {ticket_cost} demo ETB deducted from your demo wallet. No real payment taken.",
         "mode": "DEMO",
         "payments_enabled": False,
     }
