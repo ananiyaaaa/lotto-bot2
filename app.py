@@ -39,6 +39,7 @@ WEB_APP_URL = os.getenv(
 ).rstrip("/")
 DATABASE_PATH = os.getenv("DATABASE_PATH", "/tmp/lucky_star.db")
 WEBHOOK_SECRET = os.getenv("TELEGRAM_WEBHOOK_SECRET_TOKEN", "")
+ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "")
 
 # Demo only. No payment endpoints or payment processing are enabled.
 GAMES = {
@@ -78,6 +79,23 @@ def initialize_db():
                 game_id TEXT NOT NULL,
                 digits_json TEXT NOT NULL,
                 created_at INTEGER NOT NULL,
+                FOREIGN KEY (telegram_id) REFERENCES players(telegram_id)
+            )
+        """)
+
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS demo_payment_requests (
+                payment_id TEXT PRIMARY KEY,
+                telegram_id TEXT NOT NULL,
+                method TEXT NOT NULL,
+                reference TEXT NOT NULL,
+                amount_birr INTEGER NOT NULL,
+                game_id TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'PENDING',
+                created_at INTEGER NOT NULL,
+                reviewed_at INTEGER,
+                admin_note TEXT NOT NULL DEFAULT '',
+                UNIQUE(method, reference),
                 FOREIGN KEY (telegram_id) REFERENCES players(telegram_id)
             )
         """)
@@ -467,6 +485,106 @@ async def demo_ticket(body: TicketInput, request: Request):
         "mode": "DEMO",
         "payments_enabled": False,
     }
+
+
+class DemoPaymentInput(BaseModel):
+    method: str = Field(pattern=r"^(telebirr|cbe)$")
+    reference: str = Field(min_length=3, max_length=100, pattern=r"^[A-Za-z0-9._/-]+$")
+    amount_birr: int = Field(gt=0, le=1000000)
+    game_id: str = Field(min_length=1, max_length=24)
+
+
+class DemoPaymentReviewInput(BaseModel):
+    decision: str = Field(pattern=r"^(approve|reject)$")
+    note: str = Field(default="", max_length=300)
+
+
+def require_admin(request: Request):
+    if not ADMIN_TOKEN:
+        raise HTTPException(503, "ADMIN_TOKEN is not configured in Render.")
+    supplied = request.headers.get("X-Admin-Token", "")
+    if not supplied or not hmac.compare_digest(supplied, ADMIN_TOKEN):
+        raise HTTPException(401, "Invalid admin token.")
+
+
+@app.post("/api/demo-payments")
+async def create_demo_payment(body: DemoPaymentInput, request: Request):
+    # Simulation-only workflow; it does not verify or collect real money.
+    _, player = registered_player(request)
+    if body.game_id not in GAMES:
+        raise HTTPException(422, "Unknown game.")
+    reference = body.reference.strip()
+    payment_id = "DEMO-PAY-" + secrets.token_hex(5).upper()
+    try:
+        with connect_db() as conn:
+            conn.execute("""
+                INSERT INTO demo_payment_requests
+                (payment_id, telegram_id, method, reference, amount_birr,
+                 game_id, status, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, 'PENDING', ?)
+            """, (payment_id, player["telegram_id"], body.method, reference,
+                  body.amount_birr, body.game_id, int(time.time())))
+    except sqlite3.IntegrityError:
+        raise HTTPException(409, "That test reference was already submitted.")
+    return {"ok": True, "payment_id": payment_id, "status": "PENDING",
+            "message": "Demo submission queued for manual-review testing. No money was collected or verified.",
+            "mode": "DEMO", "payments_enabled": False}
+
+
+@app.get("/api/my-demo-payments")
+async def my_demo_payments(request: Request):
+    _, player = registered_player(request)
+    with connect_db() as conn:
+        rows = conn.execute("""
+            SELECT payment_id, method, reference, amount_birr, game_id,
+                   status, created_at, reviewed_at, admin_note
+            FROM demo_payment_requests WHERE telegram_id = ?
+            ORDER BY created_at DESC LIMIT 50
+        """, (player["telegram_id"],)).fetchall()
+    return {"ok": True, "payments": [dict(row) for row in rows],
+            "mode": "DEMO", "payments_enabled": False}
+
+
+@app.get("/api/admin/demo-payments")
+async def admin_list_demo_payments(request: Request):
+    require_admin(request)
+    with connect_db() as conn:
+        rows = conn.execute("""
+            SELECT p.payment_id, p.telegram_id, p.method, p.reference,
+                   p.amount_birr, p.game_id, p.status, p.created_at,
+                   p.reviewed_at, p.admin_note,
+                   COALESCE(NULLIF(u.display_name, ''), u.first_name, 'Player') AS player_name
+            FROM demo_payment_requests p
+            LEFT JOIN players u ON u.telegram_id = p.telegram_id
+            ORDER BY CASE p.status WHEN 'PENDING' THEN 0 ELSE 1 END,
+                     p.created_at DESC LIMIT 500
+        """).fetchall()
+    return {"ok": True, "payments": [dict(row) for row in rows],
+            "mode": "DEMO", "payments_enabled": False}
+
+
+@app.post("/api/admin/demo-payments/{payment_id}/review")
+async def admin_review_demo_payment(payment_id: str, body: DemoPaymentReviewInput,
+                                    request: Request):
+    require_admin(request)
+    decision = "APPROVED_DEMO" if body.decision == "approve" else "REJECTED_DEMO"
+    with connect_db() as conn:
+        row = conn.execute(
+            "SELECT payment_id, status FROM demo_payment_requests WHERE payment_id = ?",
+            (payment_id,)
+        ).fetchone()
+        if not row:
+            raise HTTPException(404, "Demo submission not found.")
+        if row["status"] != "PENDING":
+            raise HTTPException(409, "This submission has already been reviewed.")
+        conn.execute("""
+            UPDATE demo_payment_requests
+            SET status = ?, reviewed_at = ?, admin_note = ?
+            WHERE payment_id = ? AND status = 'PENDING'
+        """, (decision, int(time.time()), body.note.strip(), payment_id))
+    return {"ok": True, "payment_id": payment_id, "status": decision,
+            "message": "Demo status updated only. This does not verify a real transfer or activate a ticket.",
+            "mode": "DEMO", "payments_enabled": False}
 
 
 @app.post("/telegram/webhook")
