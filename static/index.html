@@ -22,30 +22,14 @@
   <div style="display:flex;align-items:center;gap:9px"><span id="topUser" class="top-user"></span><span class="mode">DEMO ONLY</span></div>
 </header>
 
-<section id="welcome" class="screen active">
- <div class="auth-wrap">
-  <div class="auth-visual"><div class="big-logo">🌟</div><div class="eyebrow">Your lucky moment starts here</div><h1>Welcome to<br><span style="color:var(--gold2)">Lucky Star</span></h1><p class="sub" style="margin:auto">Explore Ethiopian-inspired lottery games, choose your six digits, and collect demo tickets.</p></div>
-  <div class="account-card">
-   <div class="hero-actions" style="margin-top:0"><button class="btn primary full" onclick="showAuth('signup')">✨ Create an account</button><button class="btn secondary full" onclick="showAuth('login')">🔐 Log in with PIN</button></div>
-   <div class="notice">DEMO mode: no deposits, withdrawals, or real-money payments. Demo tickets have no cash value.</div>
-  </div>
- </div>
-</section>
-
-<section id="auth" class="screen">
- <button class="back" onclick="go('welcome')">← Back</button>
- <div class="auth-wrap" style="margin-top:0">
-  <div class="auth-visual"><div class="big-logo">🌟</div><h1 id="authTitle">Create your account</h1><p id="authDescription" class="sub" style="margin:auto">Create your player profile.</p></div>
-  <form id="authForm" class="account-card">
-   <div id="nameWrap" class="field"><span>PLAYER NAME</span><input id="playerName" autocomplete="name" maxlength="60" placeholder="Enter your name"></div>
-   <div id="phoneWrap" class="field"><span>PHONE NUMBER (OPTIONAL)</span><input id="playerPhone" autocomplete="tel" inputmode="tel" maxlength="24" placeholder="+251..."></div>
-   <label class="field"><span>4-DIGIT PIN</span><input id="playerPin" class="pin-input" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="current-password" placeholder="••••" required></label>
-   <div id="confirmWrap" class="field"><span>CONFIRM 4-DIGIT PIN</span><input id="confirmPin" class="pin-input" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="new-password" placeholder="••••"></div>
-   <div id="authMessage" class="message" role="status"></div>
-   <button id="authSubmit" class="btn primary full" type="submit">Create demo account</button>
-   <p class="auth-switch"><span id="switchText">Already registered?</span> <button type="button" class="text-button" id="switchAuth" onclick="toggleAuth()">Log in</button></p>
-   <div class="notice">Your PIN is sent to the server over HTTPS for verification. Do not reuse your banking PIN. Backend PIN hashing and rate limits must be implemented before production use.</div>
-  </form>
+<section id="telegramRequired" class="screen active">
+ <div class="hero">
+  <div class="big-logo">🌟</div>
+  <div class="eyebrow">Ethiopia Lucky Star</div>
+  <h1>Open your game<br><span style="color:var(--gold2)">through Telegram</span></h1>
+  <p class="sub">Your Telegram bot handles registration and account access. Return to the bot, tap Start, then open the Mini App again.</p>
+  <a class="btn primary full" style="display:block;text-align:center;text-decoration:none;margin-top:18px" href="https://t.me/baleetabot">Open Telegram bot</a>
+  <div class="notice">Demo mode only. No real-money deposits, withdrawals, or cash prizes are enabled.</div>
  </div>
 </section>
 
@@ -67,7 +51,7 @@
 </section>
 
 <section id="gamePage" class="screen">
- <button class="back" onclick="go('games')">← All games</button>
+ <button class="back" onclick="goBack()">← Back</button>
  <div id="gameDetails"></div>
 </section>
 
@@ -80,45 +64,25 @@
 
 <section id="wallet" class="screen">
  <div class="hero">
-  <div class="eyebrow">Player wallet • Demo workflow</div>
-  <h1>Your wallet<br><span style="color:var(--gold2)">in one place</span></h1>
-  <p class="sub">Review simulated deposit and withdrawal requests. No funds are received, held, or transferred in this version.</p>
+  <div class="eyebrow">Player wallet • Demo mode</div>
+  <h1>Your wallet<br><span style="color:var(--gold2)">at a glance</span></h1>
+  <p class="sub">Check your demo balance and request status here. Use the Telegram bot menu for Deposit and Withdraw.</p>
   <div class="stats">
    <div class="stat"><small>AVAILABLE BALANCE</small><strong>0.00 ETB</strong></div>
-   <div class="stat"><small>PAYMENT STATUS</small><strong style="font-size:14px">Disabled</strong></div>
+   <div class="stat"><small>WALLET STATUS</small><strong style="font-size:14px">Demo only</strong></div>
   </div>
-  <div class="notice">DEMO ONLY — this balance is not a bank or payment balance. Submitting a request does not move money or authorize paid play.</div>
+  <div class="notice">This is not a bank or payment balance. No funds are received, held, or transferred. Deposit and withdrawal options in Telegram are not real-money transactions.</div>
+  <button class="btn primary full" onclick="openBotForWallet()">💳 Open Telegram bot for Deposit / Withdraw</button>
  </div>
  <div class="ticket-layout">
-  <div class="panel">
-   <div class="eyebrow">Add funds • simulation</div><h2>Deposit request</h2>
-   <p class="sub">Create a test request for the admin queue. Do not send money or enter a real transfer reference.</p>
-   <label class="field"><span>PAYMENT METHOD</span><select id="demoPayMethod" class="fieldInput"><option value="telebirr">Telebirr (simulation)</option><option value="cbe">CBE (simulation)</option></select></label>
-   <label class="field"><span>DEMO AMOUNT (BIRR)</span><input id="demoPayAmount" type="number" min="1" max="1000000" value="100" inputmode="numeric"></label>
-   <label class="field"><span>TEST REFERENCE (NOT A REAL TRANSACTION)</span><input id="demoPayReference" maxlength="100" placeholder="Example: TEST-123456" autocomplete="off"></label>
-   <label class="field"><span>GAME FOR TESTING</span><select id="demoPayGame" class="fieldInput"><option value="daily">Daily Loto</option><option value="weekly">Weekly Loto</option><option value="monthly">Monthly Loto</option><option value="holiday">Holiday Loto</option><option value="accessory">Accessory Loto</option><option value="lebet">Le Bet Loto</option><option value="jemaw">Jemaw Loto</option><option value="beale">Beale Loto</option></select></label>
-   <button class="btn primary full" onclick="submitDemoPayment()">Submit demo deposit request</button>
-   <div id="demoPayMessage" class="message" role="status"></div>
-   <h3 style="margin-top:20px">Deposit request history</h3><div id="demoPaymentHistory" class="ticket-list"><div class="empty">No requests loaded yet.</div></div>
-  </div>
-  <div class="panel">
-   <div class="eyebrow">Withdraw funds • simulation</div><h2>Withdrawal request</h2>
-   <p class="sub">Test the request and review flow. This does not send money to an account.</p><div class="notice">Use fictional test details only. Do not enter a real bank account, wallet number, password, or PIN.</div>
-   <label class="field"><span>METHOD</span><select id="withdrawMethod" class="fieldInput"><option value="telebirr">Telebirr (simulation)</option><option value="cbe">CBE (simulation)</option></select></label>
-   <label class="field"><span>ACCOUNT HOLDER NAME</span><input id="withdrawName" maxlength="100" placeholder="TEST USER" autocomplete="off"></label>
-   <label class="field"><span>ACCOUNT / WALLET NUMBER</span><input id="withdrawAccount" maxlength="40" placeholder="TEST-ACCOUNT-1234" autocomplete="off"></label>
-   <label class="field"><span>DEMO AMOUNT (BIRR)</span><input id="withdrawAmount" type="number" min="1" max="1000000" value="100" inputmode="numeric"></label>
-   <button class="btn secondary full" onclick="submitDemoWithdrawal()">Submit demo withdrawal request</button>
-   <div id="withdrawMessage" class="message" role="status"></div>
-   <h3 style="margin-top:20px">Withdrawal request history</h3><div id="withdrawalHistory" class="ticket-list"><div class="empty">No requests loaded yet.</div></div>
-  </div>
+  <div class="panel"><div class="eyebrow">Activity</div><h2>Deposit requests</h2><p class="sub">Read-only status history for demo requests.</p><div id="demoPaymentHistory" class="ticket-list"><div class="empty">Loading requests…</div></div></div>
+  <div class="panel"><div class="eyebrow">Activity</div><h2>Withdrawal requests</h2><p class="sub">Read-only status history for demo requests.</p><div id="withdrawalHistory" class="ticket-list"><div class="empty">Loading requests…</div></div></div>
  </div>
- <div class="panel"><h3>Account settings</h3><p class="sub">Your tickets and request history are tied to the Telegram account verified by the backend.</p><button class="btn secondary full" onclick="renderProfile();go('profile')">👤 View profile</button><button class="btn ghost full" style="margin-top:9px" onclick="logout()">Log out</button></div>
 </section>
 
 <section id="profile" class="screen">
  <div class="hero"><div class="eyebrow">Player account</div><h1>Your Lucky Star<br><span style="color:var(--gold2)">profile</span></h1><p class="sub">Manage this device's demo session.</p></div>
- <div class="panel"><h3 id="profileName">Player</h3><p id="profileInfo" class="sub">Demo player profile</p><div class="notice">For security, never share your PIN. A browser-only demo session is not a secure account system; use the backend auth endpoints before launch.</div><button class="btn secondary full" onclick="logout()">Log out</button></div>
+ <div class="panel"><h3 id="profileName">Player</h3><p id="profileInfo" class="sub">Telegram-verified player profile</p><div class="notice">Your Telegram bot handles registration and account access. Never share your Telegram account or banking PIN with anyone.</div><button class="btn secondary full" onclick="goBack()">← Back</button></div>
 </section>
 <div class="footer">ETHIOPIA LUCKY STAR • DEMO MODE • NO REAL-MONEY PAYMENTS</div>
 </div>
@@ -145,7 +109,7 @@ const GAMES = [
  {id:'jemaw',name:'Jemaw Loto',emoji:'💎',price:null,prize:'Demo prize',schedule:'Schedule to be announced',desc:'A bright, celebratory six-digit demo game.',draw:'To be configured',tag:'LUCKY'},
  {id:'beale',name:'Beale Loto',emoji:'🦁',price:null,prize:'Demo prize',schedule:'Schedule to be announced',desc:'A playful Ethiopian-inspired demo game.',draw:'To be configured',tag:'SPECIAL'}
 ];
-let currentGame = GAMES[0], authMode='signup', player=null, tickets=[];
+let currentGame = GAMES[0], player=null, tickets=[], navStack=[], currentScreen='telegramRequired', handlingPopState=false;
 const $=id=>document.getElementById(id);
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function getStore(key, fallback){try{return JSON.parse(localStorage.getItem(key))??fallback}catch(e){return fallback}}
@@ -153,14 +117,12 @@ function setStore(key,value){try{localStorage.setItem(key,JSON.stringify(value))
 function initDecor(){const host=$('decor');for(let i=0;i<15;i++){const s=document.createElement('span');s.className='spark';s.textContent=['✦','✧','⋆','·'][i%4];s.style.left=(Math.random()*100)+'%';s.style.fontSize=(10+Math.random()*17)+'px';s.style.animationDuration=(12+Math.random()*17)+'s';s.style.animationDelay=(-Math.random()*22)+'s';host.appendChild(s)}}
 function renderGames(){const card=g=>`<button class="game-card" onclick="openGame('${g.id}')" aria-label="Open ${g.name}"><div style="display:flex;justify-content:space-between;align-items:start"><div class="ball">${g.emoji}</div><span class="mode" style="font-size:9px;padding:6px 7px">${g.tag}</span></div><div class="game-title">${g.name}</div><div class="meta">${g.schedule}</div><div class="price">${g.price?g.price+' ETB / demo ticket':g.prize}</div></button>`;$('homeGames').innerHTML=GAMES.slice(0,4).map(card).join('');$('allGames').innerHTML=GAMES.map(card).join('')}
 function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');const isIn=['home','games','gamePage','tickets','wallet','profile'].includes(id);$('bottomNav').classList.toggle('hidden',!isIn);document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.screen===id || (id==='gamePage'&&b.dataset.screen==='games')));if(id==='tickets'){renderTickets();}if(id==='wallet'){loadDemoPaymentHistory();loadDemoWithdrawalHistory();}if(id==='profile')renderProfile();window.scrollTo({top:0,behavior:'smooth'});if(tg)try{tg.BackButton.show();tg.BackButton.onClick(()=>{if(id==='gamePage')go('games');else if(id==='games'||id==='tickets'||id==='profile')go('home');else go('welcome')})}catch(e){}}
-function showAuth(mode){authMode=mode;updateAuthForm();go('auth')}
-function toggleAuth(){authMode=authMode==='signup'?'login':'signup';updateAuthForm()}
-function updateAuthForm(){$('authTitle').textContent=authMode==='signup'?'Create your account':'Welcome back';$('authDescription').textContent=authMode==='signup'?'Create a demo player profile to get started.':'Enter your registered name and four-digit PIN.';$('nameWrap').classList.toggle('hidden',authMode==='login');$('phoneWrap').classList.toggle('hidden',authMode==='login');$('confirmWrap').classList.toggle('hidden',authMode==='login');$('playerName').required=authMode==='signup';$('confirmPin').required=authMode==='signup';$('authSubmit').textContent=authMode==='signup'?'✨ Create demo account':'🔐 Log in';$('switchText').textContent=authMode==='signup'?'Already registered?':'New to Lucky Star?';$('switchAuth').textContent=authMode==='signup'?'Log in':'Sign up';showMessage('authMessage','', '');}
-function showMessage(id,text,type){const el=$(id);el.textContent=text;el.className='message'+(text?' show '+type:'')}
+function showMessage(id,text,type){const el=$(id);if(!el)return;el.textContent=text;el.className='message'+(text?' show '+type:'')}
 async function api(path,options={}){const headers={'Content-Type':'application/json',...(options.headers||{})};if(tg?.initData)headers['X-Telegram-Init-Data']=tg.initData;const res=await fetch(API_BASE+path,{...options,headers});let data={};try{data=await res.json()}catch(e){}if(!res.ok)throw new Error(data.detail||data.message||`Request failed (${res.status})`);return data}
-$('authForm').addEventListener('submit',async e=>{e.preventDefault();const name=$('playerName').value.trim(),phone=$('playerPhone').value.trim(),pin=$('playerPin').value,confirm=$('confirmPin').value;if(!/^\d{4}$/.test(pin)){showMessage('authMessage','Enter exactly four digits for your PIN.','error');return}if(authMode==='signup'&&pin!==confirm){showMessage('authMessage','The PINs do not match.','error');return}const submit=$('authSubmit');submit.disabled=true;submit.textContent='Please wait…';try{const path=authMode==='signup'?'/api/auth/signup':'/api/auth/login';const body=authMode==='signup'?{name,phone,pin,telegram_init_data:tg?.initData||''}:{name,pin,telegram_init_data:tg?.initData||''};const data=await api(path,{method:'POST',body:JSON.stringify(body)});player={name:data.player?.name||data.name||name,phone:data.player?.phone||phone,telegram_id:data.player?.telegram_id||null,authenticated:true,server:true};showMessage('authMessage',authMode==='signup'?'Account created! Opening the game…':'Login successful! Welcome back.','ok');confetti();setTimeout(()=>enterApp(),350)}catch(err){showMessage('authMessage',err.message||'Unable to authenticate. Open the game from your Telegram bot and try again.','error')}finally{submit.disabled=false;submit.textContent=authMode==='signup'?'✨ Create demo account':'🔐 Log in'}});
-async function enterApp(){if(!player)return; $('topUser').textContent='👋 '+(player.name||'Player');$('bottomNav').classList.remove('hidden');go('home');await loadServerTickets();renderTickets();await Promise.all([loadDemoPaymentHistory(),loadDemoWithdrawalHistory()])}
-function logout(){player=null;tickets=[];$('topUser').textContent='';$('bottomNav').classList.add('hidden');go('welcome')}
+function go(id,opts={}){const target=$(id);if(!target)return;if(currentScreen!==id&&!opts.replace)navStack.push(currentScreen);currentScreen=id;document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));target.classList.add('active');const isIn=['home','games','gamePage','tickets','wallet','profile'].includes(id);$('bottomNav').classList.toggle('hidden',!isIn);document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.screen===id||(id==='gamePage'&&b.dataset.screen==='games')));if(id==='tickets')renderTickets();if(id==='wallet'){loadDemoPaymentHistory();loadDemoWithdrawalHistory()}if(id==='profile')renderProfile();window.scrollTo({top:0,behavior:'smooth'});if(tg?.BackButton){try{if(navStack.length&&id!=='home')tg.BackButton.show();else tg.BackButton.hide()}catch(e){}}}
+function goBack(){let previous=navStack.pop();if(!previous||previous==='telegramRequired')previous='home';go(previous,{replace:true});if(tg?.BackButton){try{if(navStack.length&&currentScreen!=='home')tg.BackButton.show();else tg.BackButton.hide()}catch(e){}}}
+function openBotForWallet(){if(tg){try{tg.openTelegramLink('https://t.me/baleetabot');return}catch(e){}}window.open('https://t.me/baleetabot','_blank','noopener')}
+async function enterApp(user){player={name:user?.name||user?.first_name||'Player',phone:user?.phone||'',authenticated:true,server:true};$('topUser').textContent='👋 '+player.name;$('bottomNav').classList.remove('hidden');go('home',{replace:true});await loadServerTickets();renderTickets();await Promise.all([loadDemoPaymentHistory(),loadDemoWithdrawalHistory()])}
 function renderProfile(){$('profileName').textContent=player?.name||'Demo player';$('profileInfo').textContent=(player?.phone?player.phone+' • ':'')+(player?.server?'Server-verified account':'Local session')+' • DEMO mode'}
 function openGame(id){currentGame=GAMES.find(g=>g.id===id)||GAMES[0];renderGamePage();go('gamePage')}
 function renderGamePage(){const g=currentGame;const digits=Array(6).fill('').map((_,i)=>`<input class="digit" id="digit${i}" aria-label="Digit ${i+1}" inputmode="numeric" pattern="[0-9]" maxlength="1" value="" oninput="digitInput(${i},this)" onkeydown="digitKey(event,${i})" autocomplete="off">`).join('');$('gameDetails').innerHTML=`
@@ -175,7 +137,7 @@ function currentDigits(){return Array.from({length:6},(_,i)=>$('digit'+i)?.value
 function updatePreview(){const d=currentDigits();const p=$('previewNumber');if(!p)return;p.innerHTML=d.map(x=>`<div class="digit" style="display:grid;place-items:center;aspect-ratio:.82;animation:${x?'screenIn .2s ease':''}">${x||'?'}</div>`).join('');const c=tickets.filter(t=>t.game_id===currentGame.id).length;if($('gameTicketCount'))$('gameTicketCount').textContent=c}
 function randomDigits(){for(let i=0;i<6;i++)$('digit'+i).value=String(Math.floor(Math.random()*10));updatePreview();confetti(10)}
 function clearDigits(){for(let i=0;i<6;i++)$('digit'+i).value='';updatePreview();$('digit0').focus()}
-async function saveTicket(){if(!player){go('welcome');return}const d=currentDigits();if(d.some(x=>x==='')){showMessage('ticketMessage','Please fill all six digit boxes first.','error');return}try{const data=await api('/api/demo-ticket',{method:'POST',body:JSON.stringify({game_id:currentGame.id,digits:d.map(Number)})});await loadServerTickets();showMessage('ticketMessage',data.message||'🎉 Demo ticket saved to the server. No payment taken.','ok');confetti();updatePreview();renderTickets()}catch(err){showMessage('ticketMessage',err.message||'Could not save ticket. Please try another number or reopen the game from Telegram.','error')}}
+async function saveTicket(){if(!player){showMessage('ticketMessage','Open this Mini App from the Telegram bot after tapping Start.','error');return}const d=currentDigits();if(d.some(x=>x==='')){showMessage('ticketMessage','Please fill all six digit boxes first.','error');return}try{const data=await api('/api/demo-ticket',{method:'POST',body:JSON.stringify({game_id:currentGame.id,digits:d.map(Number)})});await loadServerTickets();showMessage('ticketMessage',data.message||'🎉 Demo ticket saved to the server. No payment taken.','ok');confetti();updatePreview();renderTickets()}catch(err){showMessage('ticketMessage',err.message||'Could not save ticket. Please try another number or reopen the game from Telegram.','error')}}
 function goGames(){go('games')}
 function renderTickets(){const host=$('ticketsList');$('ticketCountBadge').textContent=tickets.length?`(${tickets.length})`:'';if(!tickets.length){host.innerHTML='<div class="panel empty"><div class="big-logo">🎟️</div><h3>Your ticket collection is waiting</h3><p>Open a game, choose six digits, and add your first demo ticket.</p><button class="btn primary" onclick="goGames()">Explore games</button></div>';return}host.innerHTML=tickets.map(t=>{const g=GAMES.find(x=>x.id===t.game_id);const num=String(t.digits).split('').map(n=>`<span class="mini-digit">${esc(n)}</span>`).join('');const date=new Date(t.created_at);return `<article class="ticket"><div style="min-width:0"><strong>${esc(g?.emoji||'🎟️')} ${esc(t.game_name||g?.name||t.game_id)}</strong><div class="ticket-number">${num}</div><small>ID: ${esc(t.ticket_id)} • Draw: ${esc(t.draw||g?.draw||'To be configured')}</small><small>${Number.isNaN(date.getTime())?'':date.toLocaleString()}</small><small>${t.server_saved?'✓ Server saved':'Local demo copy'} • No payment</small></div><button class="btn secondary" style="padding:9px 10px;white-space:nowrap" onclick="openGame('${esc(t.game_id)}')">Play again</button></article>`}).join('')}
 async function submitDemoPayment(){
@@ -220,10 +182,7 @@ async function loadDemoWithdrawalHistory(){
 }
 function confetti(count=24){if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;for(let i=0;i<count;i++){const el=document.createElement('i');el.className='confetti';el.style.left=Math.random()*100+'vw';el.style.background=['#f6c453','#ffe8a3','#56d99b','#fff7d8'][i%4];el.style.animationDelay=Math.random()*.25+'s';el.style.transform=`rotate(${Math.random()*180}deg)`;document.body.appendChild(el);setTimeout(()=>el.remove(),2100)}}
 async function loadServerTickets(){if(!player?.authenticated)return;try{const data=await api('/api/my-tickets');tickets=(data.tickets||[]).map(t=>{const g=GAMES.find(x=>x.id===t.game_id);return {...t,game_name:g?.name||t.game_id,draw:g?.draw||'To be configured',created_at:new Date(Number(t.created_at)*1000).toISOString(),mode:'DEMO',server_saved:true}});renderTickets();updatePreview()}catch(err){tickets=[];renderTickets()}}
-async function init(){initDecor();renderGames();tickets=[];player=null;go('welcome')
- // Ask existing /api/me for Telegram identity context; do not bypass the PIN screen automatically.
- if(tg?.initData){try{const data=await api('/api/me');if(data?.player?.name&&!player){$('playerName').value=data.player.name}}catch(e){}}
-}
+async function init(){initDecor();renderGames();tickets=[];player=null;go('telegramRequired',{replace:true});if(tg?.BackButton){try{tg.BackButton.onClick(goBack)}catch(e){}}window.addEventListener('popstate',()=>{if(navStack.length)goBack()});if(!tg?.initData){return}try{const data=await api('/api/me');if(data?.user){await enterApp(data.user)}else{go('telegramRequired',{replace:true})}}catch(e){go('telegramRequired',{replace:true})}}
 init();
 </script>
 </body>
