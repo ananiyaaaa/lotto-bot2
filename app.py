@@ -32,10 +32,11 @@ async def admin_page():
         )
 
     return FileResponse(str(admin_file))
-BOT_TOKEN = os.getenv("BOT_TOKEN", "")
-WEB_APP_URL = os.getenv(
-    "WEB_APP_URL",
-    "https://lotto-bot2.onrender.com"
+BOT_TOKEN = os.getenv("BOT_TOKEN") or os.getenv("TELEGRAM_BOT_TOKEN", "")
+WEB_APP_URL = (
+    os.getenv("WEB_APP_URL")
+    or os.getenv("WEBAPP_URL")
+    or "https://lotto-bot2.onrender.com"
 ).rstrip("/")
 DATABASE_PATH = os.getenv("DATABASE_PATH", "/tmp/lucky_star.db")
 WEBHOOK_SECRET = os.getenv("TELEGRAM_WEBHOOK_SECRET_TOKEN", "")
@@ -768,11 +769,25 @@ async def telegram_webhook(request: Request):
             "chat_id": chat_id,
             "text": (
                 f"Selam {player['first_name'] or 'player'}! 🇪🇹\n\n"
-                "Your demo account is registered.\n"
-                f"Referral code: {player['referral_code']}\n"
-                "Open the game to create your PIN. Payments and cash prizes "
-                "are disabled in this demo."
+                "Welcome to Ethiopia Lucky Star. Your Telegram profile is registered.\n"
+                f"Your demo referral code: {player['referral_code']}\n\n"
+                "Use the menu below to navigate. Real-money deposits, withdrawals, "
+                "paid tickets, and cash prizes are disabled."
             ),
+            "reply_markup": {
+                "keyboard": [
+                    [{"text": "▶️ Start"}, {"text": "🎰 Play"}],
+                    [{"text": "💳 Deposit"}, {"text": "💰 Balance"}],
+                    [{"text": "🏧 Withdraw"}, {"text": "👥 Invite"}],
+                    [{"text": "📖 Instructions"}, {"text": "🆘 Support"}],
+                ],
+                "resize_keyboard": True,
+                "is_persistent": True,
+            }
+        })
+        await telegram_call("sendMessage", {
+            "chat_id": chat_id,
+            "text": "Open the Mini App to sign in and explore the games.",
             "reply_markup": {
                 "inline_keyboard": [[{
                     "text": "🎰 Open Ethiopia Lucky Star",
@@ -780,10 +795,46 @@ async def telegram_webhook(request: Request):
                 }]]
             }
         })
-    elif text.startswith("/help"):
+    elif text in {"▶️ Start", "🎰 Play"}:
         await telegram_call("sendMessage", {
             "chat_id": chat_id,
-            "text": "Send /start to register and open the demo game."
+            "text": "Open Ethiopia Lucky Star to access the games and your ticket collection.",
+            "reply_markup": {"inline_keyboard": [[{
+                "text": "🎰 Open Ethiopia Lucky Star",
+                "web_app": {"url": WEB_APP_URL}
+            }]]}
         })
+    elif text == "💳 Deposit":
+        await telegram_call("sendMessage", {
+            "chat_id": chat_id,
+            "text": "Deposit is simulation-only. Do not transfer money. Open the app and choose Wallet to test a demo request."
+        })
+    elif text == "💰 Balance":
+        await telegram_call("sendMessage", {
+            "chat_id": chat_id,
+            "text": "Demo balance: 0.00 ETB. This is not a bank balance and no real funds are held."
+        })
+    elif text == "🏧 Withdraw":
+        await telegram_call("sendMessage", {
+            "chat_id": chat_id,
+            "text": "Real withdrawals are disabled. You can test a demo withdrawal request in the app's Wallet screen; no funds will be transferred."
+        })
+    elif text == "👥 Invite":
+        player = register_user(user)
+        await telegram_call("sendMessage", {
+            "chat_id": chat_id,
+            "text": f"Your demo referral code is {player['referral_code']}. Share the official bot link with friends; referrals do not earn cash rewards in demo mode."
+        })
+    elif text == "📖 Instructions":
+        await telegram_call("sendMessage", {
+            "chat_id": chat_id,
+            "text": "1. Open the Mini App. 2. Create a 4-digit app PIN. 3. Choose one of the eight games. 4. Enter six digits or use Random Number. 5. Save a demo ticket. Duplicate numbers in the same game are rejected. No payment or cash prize is enabled."
+        })
+    elif text == "🆘 Support" or text.startswith("/help"):
+        await telegram_call("sendMessage", {
+            "chat_id": chat_id,
+            "text": "For support, send a message to the bot owner. Never send your PIN or bank password in chat."
+        })
+
 
     return {"ok": True}
