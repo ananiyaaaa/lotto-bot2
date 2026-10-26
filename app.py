@@ -843,7 +843,7 @@ async def telegram_webhook(request: Request):
         })
         await telegram_call("sendMessage", {
             "chat_id": chat_id,
-            "text": "Open the Mini App to sign in and explore the games.",
+            "text": "Open the Mini App to play. Registration is handled by this Telegram bot; no web login is needed.",
             "reply_markup": {
                 "inline_keyboard": [[{
                     "text": "🎰 Open Ethiopia Lucky Star",
@@ -863,7 +863,7 @@ async def telegram_webhook(request: Request):
     elif text == "💳 Deposit":
         await telegram_call("sendMessage", {
             "chat_id": chat_id,
-            "text": "Deposit is simulation-only. Do not transfer money. Open the app and choose Wallet to test a demo request."
+            "text": "Deposit is not enabled for real money yet. Do not transfer money. Approved payment-provider integration is required before deposits can be accepted."
         })
     elif text == "💰 Balance":
         await telegram_call("sendMessage", {
@@ -873,7 +873,7 @@ async def telegram_webhook(request: Request):
     elif text == "🏧 Withdraw":
         await telegram_call("sendMessage", {
             "chat_id": chat_id,
-            "text": "Real withdrawals are disabled. You can test a demo withdrawal request in the app's Wallet screen; no funds will be transferred."
+            "text": "Real withdrawals are disabled. The Mini App Wallet shows demo status only; no funds will be transferred."
         })
     elif text == "👥 Invite":
         player = register_user(user)
@@ -884,7 +884,7 @@ async def telegram_webhook(request: Request):
     elif text == "📖 Instructions":
         await telegram_call("sendMessage", {
             "chat_id": chat_id,
-            "text": "1. Open the Mini App. 2. Create a 4-digit app PIN. 3. Choose one of the eight games. 4. Enter six digits or use Random Number. 5. Save a demo ticket. Duplicate numbers in the same game are rejected. No payment or cash prize is enabled."
+            "text": "1. Send /start to this bot. 2. Open the Mini App. 3. Choose one of the eight games. 4. Enter six digits or use Random Number. 5. Save a demo ticket. A number can be used only once within each game, but may be used in a different game. Real-money payments and cash prizes are disabled."
         })
     elif text == "🆘 Support" or text.startswith("/help"):
         await telegram_call("sendMessage", {
