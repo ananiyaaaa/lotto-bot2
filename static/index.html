@@ -72,23 +72,48 @@
 </section>
 
 <section id="tickets" class="screen">
- <div class="section-head" style="margin-top:5px"><div><div class="eyebrow">Your collection</div><h2>My demo tickets 🎟</h2><p>Tickets saved to this browser and server when available.</p></div></div>
- <div class="panel">
-  <div class="eyebrow">Payment workflow test</div>
-  <h3>Submit a demo payment reference</h3>
-  <p class="sub">This tests the manual-review dashboard only. Do not transfer money: no real payment is collected or verified.</p>
-  <label class="field"><span>PAYMENT METHOD</span><select id="demoPayMethod" class="fieldInput"><option value="telebirr">Telebirr (simulation)</option><option value="cbe">CBE (simulation)</option></select></label>
-  <label class="field"><span>DEMO AMOUNT (BIRR)</span><input id="demoPayAmount" type="number" min="1" max="1000000" value="100" inputmode="numeric"></label>
-  <label class="field"><span>TEST REFERENCE (NOT A REAL TRANSACTION)</span><input id="demoPayReference" maxlength="100" placeholder="Example: TEST-123456" autocomplete="off"></label>
-  <label class="field"><span>GAME</span><select id="demoPayGame" class="fieldInput"><option value="daily">Daily Loto</option><option value="weekly">Weekly Loto</option><option value="monthly">Monthly Loto</option><option value="holiday">Holiday Loto</option><option value="accessory">Accessory Loto</option><option value="lebet">Le Bet Loto</option><option value="jemaw">Jemaw Loto</option><option value="beale">Beale Loto</option></select></label>
-  <button class="btn primary full" onclick="submitDemoPayment()">Submit demo reference for review</button>
-  <div id="demoPayMessage" class="message" role="status"></div>
-  <div class="notice">Simulation only: approval changes the demo request status only. It does not prove payment or activate a paid ticket.</div>
-  <h3 style="margin-top:20px">My demo payment submissions</h3>
-  <div id="demoPaymentHistory" class="ticket-list"><div class="empty">No submissions loaded yet.</div></div>
- </div>
+ <div class="section-head" style="margin-top:5px"><div><div class="eyebrow">Your collection</div><h2>My demo tickets 🎟</h2><p>Tickets are loaded from the server for your verified Telegram account.</p></div></div>
  <div id="ticketsList" class="ticket-list"></div>
  <div class="notice">These are demo tickets only. No payment has been taken and no prize is guaranteed.</div>
+</section>
+
+
+<section id="wallet" class="screen">
+ <div class="hero">
+  <div class="eyebrow">Player wallet • Demo workflow</div>
+  <h1>Your wallet<br><span style="color:var(--gold2)">in one place</span></h1>
+  <p class="sub">Review simulated deposit and withdrawal requests. No funds are received, held, or transferred in this version.</p>
+  <div class="stats">
+   <div class="stat"><small>AVAILABLE BALANCE</small><strong>0.00 ETB</strong></div>
+   <div class="stat"><small>PAYMENT STATUS</small><strong style="font-size:14px">Disabled</strong></div>
+  </div>
+  <div class="notice">DEMO ONLY — this balance is not a bank or payment balance. Submitting a request does not move money or authorize paid play.</div>
+ </div>
+ <div class="ticket-layout">
+  <div class="panel">
+   <div class="eyebrow">Add funds • simulation</div><h2>Deposit request</h2>
+   <p class="sub">Create a test request for the admin queue. Do not send money or enter a real transfer reference.</p>
+   <label class="field"><span>PAYMENT METHOD</span><select id="demoPayMethod" class="fieldInput"><option value="telebirr">Telebirr (simulation)</option><option value="cbe">CBE (simulation)</option></select></label>
+   <label class="field"><span>DEMO AMOUNT (BIRR)</span><input id="demoPayAmount" type="number" min="1" max="1000000" value="100" inputmode="numeric"></label>
+   <label class="field"><span>TEST REFERENCE (NOT A REAL TRANSACTION)</span><input id="demoPayReference" maxlength="100" placeholder="Example: TEST-123456" autocomplete="off"></label>
+   <label class="field"><span>GAME FOR TESTING</span><select id="demoPayGame" class="fieldInput"><option value="daily">Daily Loto</option><option value="weekly">Weekly Loto</option><option value="monthly">Monthly Loto</option><option value="holiday">Holiday Loto</option><option value="accessory">Accessory Loto</option><option value="lebet">Le Bet Loto</option><option value="jemaw">Jemaw Loto</option><option value="beale">Beale Loto</option></select></label>
+   <button class="btn primary full" onclick="submitDemoPayment()">Submit demo deposit request</button>
+   <div id="demoPayMessage" class="message" role="status"></div>
+   <h3 style="margin-top:20px">Deposit request history</h3><div id="demoPaymentHistory" class="ticket-list"><div class="empty">No requests loaded yet.</div></div>
+  </div>
+  <div class="panel">
+   <div class="eyebrow">Withdraw funds • simulation</div><h2>Withdrawal request</h2>
+   <p class="sub">Test the request and review flow. This does not send money to an account.</p>
+   <label class="field"><span>METHOD</span><select id="withdrawMethod" class="fieldInput"><option value="telebirr">Telebirr (simulation)</option><option value="cbe">CBE (simulation)</option></select></label>
+   <label class="field"><span>ACCOUNT HOLDER NAME</span><input id="withdrawName" maxlength="100" placeholder="Name on account" autocomplete="off"></label>
+   <label class="field"><span>ACCOUNT / WALLET NUMBER</span><input id="withdrawAccount" maxlength="40" placeholder="Test account number" autocomplete="off"></label>
+   <label class="field"><span>DEMO AMOUNT (BIRR)</span><input id="withdrawAmount" type="number" min="1" max="1000000" value="100" inputmode="numeric"></label>
+   <button class="btn secondary full" onclick="submitDemoWithdrawal()">Submit demo withdrawal request</button>
+   <div id="withdrawMessage" class="message" role="status"></div>
+   <h3 style="margin-top:20px">Withdrawal request history</h3><div id="withdrawalHistory" class="ticket-list"><div class="empty">No requests loaded yet.</div></div>
+  </div>
+ </div>
+ <div class="panel"><h3>Account settings</h3><p class="sub">Your tickets and request history are tied to the Telegram account verified by the backend.</p><button class="btn secondary full" onclick="renderProfile();go('profile')">👤 View profile</button><button class="btn ghost full" style="margin-top:9px" onclick="logout()">Log out</button></div>
 </section>
 
 <section id="profile" class="screen">
@@ -101,7 +126,8 @@
 <nav id="bottomNav" class="bottom-nav hidden" aria-label="Main navigation"><div class="nav-inner">
  <button class="nav-btn active" data-screen="home" onclick="go('home')"><span>🏠</span>Home</button>
  <button class="nav-btn" data-screen="games" onclick="go('games')"><span>🎱</span>Games</button>
- <button class="nav-btn" data-screen="tickets" onclick="go('tickets')"><span>🎟️</span>My Tickets</button>
+ <button class="nav-btn" data-screen="tickets" onclick="go('tickets')"><span>🎟️</span>Tickets</button>
+ <button class="nav-btn" data-screen="wallet" onclick="go('wallet')"><span>👛</span>Wallet</button>
 </div></nav>
 
 <script>
@@ -133,7 +159,7 @@ function updateAuthForm(){$('authTitle').textContent=authMode==='signup'?'Create
 function showMessage(id,text,type){const el=$(id);el.textContent=text;el.className='message'+(text?' show '+type:'')}
 async function api(path,options={}){const headers={'Content-Type':'application/json',...(options.headers||{})};if(tg?.initData)headers['X-Telegram-Init-Data']=tg.initData;const res=await fetch(API_BASE+path,{...options,headers});let data={};try{data=await res.json()}catch(e){}if(!res.ok)throw new Error(data.detail||data.message||`Request failed (${res.status})`);return data}
 $('authForm').addEventListener('submit',async e=>{e.preventDefault();const name=$('playerName').value.trim(),phone=$('playerPhone').value.trim(),pin=$('playerPin').value,confirm=$('confirmPin').value;if(!/^\d{4}$/.test(pin)){showMessage('authMessage','Enter exactly four digits for your PIN.','error');return}if(authMode==='signup'&&pin!==confirm){showMessage('authMessage','The PINs do not match.','error');return}const submit=$('authSubmit');submit.disabled=true;submit.textContent='Please wait…';try{const path=authMode==='signup'?'/api/auth/signup':'/api/auth/login';const body=authMode==='signup'?{name,phone,pin,telegram_init_data:tg?.initData||''}:{name,pin,telegram_init_data:tg?.initData||''};const data=await api(path,{method:'POST',body:JSON.stringify(body)});player={name:data.player?.name||data.name||name,phone:data.player?.phone||phone,telegram_id:data.player?.telegram_id||null,authenticated:true,server:true};showMessage('authMessage',authMode==='signup'?'Account created! Opening the game…':'Login successful! Welcome back.','ok');confetti();setTimeout(()=>enterApp(),350)}catch(err){showMessage('authMessage',err.message||'Unable to authenticate. Open the game from your Telegram bot and try again.','error')}finally{submit.disabled=false;submit.textContent=authMode==='signup'?'✨ Create demo account':'🔐 Log in'}});
-async function enterApp(){if(!player)return; $('topUser').textContent='👋 '+(player.name||'Player');$('bottomNav').classList.remove('hidden');go('home');await loadServerTickets();renderTickets()}
+async function enterApp(){if(!player)return; $('topUser').textContent='👋 '+(player.name||'Player');$('bottomNav').classList.remove('hidden');go('home');await loadServerTickets();renderTickets();await Promise.all([loadDemoPaymentHistory(),loadDemoWithdrawalHistory()])}
 function logout(){player=null;tickets=[];$('topUser').textContent='';$('bottomNav').classList.add('hidden');go('welcome')}
 function renderProfile(){$('profileName').textContent=player?.name||'Demo player';$('profileInfo').textContent=(player?.phone?player.phone+' • ':'')+(player?.server?'Server-verified account':'Local session')+' • DEMO mode'}
 function openGame(id){currentGame=GAMES.find(g=>g.id===id)||GAMES[0];renderGamePage();go('gamePage')}
@@ -167,6 +193,30 @@ async function loadDemoPaymentHistory(){
  if(!rows.length){host.innerHTML='<div class="empty">No demo payment submissions yet.</div>';return}
  host.innerHTML=rows.map(p=>`<article class="ticket"><div style="min-width:0"><strong>${esc(p.method.toUpperCase())} • ${esc(p.amount_birr)} demo birr</strong><small>ID: ${esc(p.payment_id)}</small><small>Reference: ${esc(p.reference)}</small><small>Game: ${esc(p.game_id)} • Status: ${esc(p.status)}</small><small>${new Date(Number(p.created_at)*1000).toLocaleString()}</small>${p.admin_note?`<small>Admin note: ${esc(p.admin_note)}</small>`:''}</div></article>`).join('')}
  catch(err){host.innerHTML=`<div class="notice">Could not load submissions: ${esc(err.message)}</div>`}
+}
+async function submitDemoWithdrawal(){
+ if(!player){go('welcome');return}
+ const method=$('withdrawMethod').value;
+ const account_name=$('withdrawName').value.trim();
+ const account_number=$('withdrawAccount').value.trim();
+ const amount_birr=Number($('withdrawAmount').value);
+ if(account_name.length<2){showMessage('withdrawMessage','Enter the account holder name for this demo request.','error');return}
+ if(!/^[A-Za-z0-9+._/-]{3,40}$/.test(account_number)){showMessage('withdrawMessage','Enter a test account or wallet number (3–40 characters).','error');return}
+ if(!Number.isInteger(amount_birr)||amount_birr<1||amount_birr>1000000){showMessage('withdrawMessage','Enter a valid demo amount.','error');return}
+ try{
+  const data=await api('/api/demo-withdrawals',{method:'POST',body:JSON.stringify({method,account_name,account_number,amount_birr})});
+  showMessage('withdrawMessage',data.message||'Demo withdrawal request saved.','ok');
+  $('withdrawName').value='';$('withdrawAccount').value='';
+  await loadDemoWithdrawalHistory()
+ }catch(err){showMessage('withdrawMessage',err.message||'Could not submit the demo withdrawal request.','error')}
+}
+async function loadDemoWithdrawalHistory(){
+ const host=$('withdrawalHistory');if(!host||!player)return;
+ try{
+  const data=await api('/api/my-demo-withdrawals'),rows=data.withdrawals||[];
+  if(!rows.length){host.innerHTML='<div class="empty">No withdrawal requests yet.</div>';return}
+  host.innerHTML=rows.map(w=>`<article class="ticket"><div style="min-width:0"><strong>${esc(w.method.toUpperCase())} • ${esc(w.amount_birr)} demo birr</strong><small>ID: ${esc(w.withdrawal_id)}</small><small>Account: ${esc(w.account_name)} • ${esc(w.account_number)}</small><small>Status: ${esc(w.status)}</small><small>${new Date(Number(w.created_at)*1000).toLocaleString()}</small>${w.admin_note?`<small>Admin note: ${esc(w.admin_note)}</small>`:''}</div></article>`).join('')
+ }catch(err){host.innerHTML=`<div class="notice">Could not load withdrawal requests: ${esc(err.message)}</div>`}
 }
 function confetti(count=24){if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;for(let i=0;i<count;i++){const el=document.createElement('i');el.className='confetti';el.style.left=Math.random()*100+'vw';el.style.background=['#f6c453','#ffe8a3','#56d99b','#fff7d8'][i%4];el.style.animationDelay=Math.random()*.25+'s';el.style.transform=`rotate(${Math.random()*180}deg)`;document.body.appendChild(el);setTimeout(()=>el.remove(),2100)}}
 async function loadServerTickets(){if(!player?.authenticated)return;try{const data=await api('/api/my-tickets');tickets=(data.tickets||[]).map(t=>{const g=GAMES.find(x=>x.id===t.game_id);return {...t,game_name:g?.name||t.game_id,draw:g?.draw||'To be configured',created_at:new Date(Number(t.created_at)*1000).toISOString(),mode:'DEMO',server_saved:true}});renderTickets();updatePreview()}catch(err){tickets=[];renderTickets()}}
