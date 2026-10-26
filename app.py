@@ -84,6 +84,59 @@ def initialize_db():
             )
         """)
 
+        # Normalize each six-digit ticket into a canonical string such as 012345.
+        # A database UNIQUE index is the final guard against concurrent duplicate claims.
+        ticket_columns = {
+            row["name"] for row in
+            conn.execute("PRAGMA table_info(demo_tickets)").fetchall()
+        }
+        if "number_key" not in ticket_columns:
+            conn.execute("ALTER TABLE demo_tickets ADD COLUMN number_key TEXT")
+
+        seen_numbers = set()
+        saved_rows = conn.execute("""
+            SELECT rowid AS internal_rowid, ticket_id, game_id, digits_json
+            FROM demo_tickets
+            ORDER BY rowid ASC
+        """).fetchall()
+        for ticket_row in saved_rows:
+            try:
+                digits = json.loads(ticket_row["digits_json"])
+                number_key = "".join(str(int(digit)) for digit in digits)
+                if len(number_key) != 6 or any(char not in "0123456789" for char in number_key):
+                    number_key = None
+            except (ValueError, TypeError, json.JSONDecodeError):
+                number_key = None
+
+            if number_key is None:
+                conn.execute(
+                    "UPDATE demo_tickets SET number_key = NULL WHERE ticket_id = ?",
+                    (ticket_row["ticket_id"],)
+                )
+                continue
+
+            unique_key = (ticket_row["game_id"], number_key)
+            if unique_key in seen_numbers:
+                # Older demo versions may already contain duplicates. Keep the first
+                # saved ticket and remove the duplicate demo record so the hard rule
+                # can be enabled without a failed database migration.
+                conn.execute(
+                    "DELETE FROM demo_tickets WHERE ticket_id = ?",
+                    (ticket_row["ticket_id"],)
+                )
+                continue
+
+            seen_numbers.add(unique_key)
+            conn.execute(
+                "UPDATE demo_tickets SET number_key = ? WHERE ticket_id = ?",
+                (number_key, ticket_row["ticket_id"])
+            )
+
+        conn.execute("""
+            CREATE UNIQUE INDEX IF NOT EXISTS uq_demo_tickets_game_number
+            ON demo_tickets(game_id, number_key)
+        """)
+
         conn.execute("""
             CREATE TABLE IF NOT EXISTS demo_payment_requests (
                 payment_id TEXT PRIMARY KEY,
@@ -481,50 +534,53 @@ async def demo_ticket(body: TicketInput, request: Request):
             status_code=422, detail="Digits must be from 0 to 9."
         )
 
+    # Keep leading zeroes: 012345 is a six-digit number, not 12345.
+    number_key = "".join(str(n) for n in body.digits)
     ticket_id = "DEMO-" + secrets.token_hex(4).upper()
     digits_json = json.dumps(body.digits, separators=(",", ":"))
-    # Serialize number reservation so two simultaneous requests cannot claim
-    # the same six-digit number in the same game.
-    with connect_db() as conn:
-        conn.execute("BEGIN IMMEDIATE")
-        existing_rows = conn.execute("""
-            SELECT ticket_id, digits_json FROM demo_tickets
-            WHERE game_id = ?
-        """, (body.game_id,)).fetchall()
-        requested_digits = tuple(body.digits)
-        duplicate = False
-        for row in existing_rows:
-            try:
-                saved_digits = tuple(json.loads(row["digits_json"]))
-            except (ValueError, TypeError, json.JSONDecodeError):
-                continue
-            if saved_digits == requested_digits:
-                duplicate = True
-                break
-        if duplicate:
-            raise HTTPException(
-                409, "That six-digit number is already taken for this game. Choose another number."
-            )
-        conn.execute("""
-            INSERT INTO demo_tickets
-                (ticket_id, telegram_id, game_id, digits_json, created_at)
-            VALUES (?, ?, ?, ?, ?)
-        """, (
-            ticket_id,
-            player["telegram_id"],
-            body.game_id,
-            digits_json,
-            int(time.time()),
-        ))
+
+    try:
+        with connect_db() as conn:
+            # Serialize competing claims. The UNIQUE index below this route
+            # also prevents duplicates even if two requests race.
+            conn.execute("BEGIN IMMEDIATE")
+            already_taken = conn.execute("""
+                SELECT 1 FROM demo_tickets
+                WHERE game_id = ? AND number_key = ?
+                LIMIT 1
+            """, (body.game_id, number_key)).fetchone()
+            if already_taken:
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"Number {number_key} is already taken in {body.game_id.title()} Loto. Choose a different number for this game."
+                )
+
+            conn.execute("""
+                INSERT INTO demo_tickets
+                    (ticket_id, telegram_id, game_id, digits_json, number_key, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (
+                ticket_id,
+                player["telegram_id"],
+                body.game_id,
+                digits_json,
+                number_key,
+                int(time.time()),
+            ))
+    except sqlite3.IntegrityError:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Number {number_key} is already taken in {body.game_id.title()} Loto. Choose a different number for this game."
+        )
 
     return {
         "ok": True,
         "ticket_id": ticket_id,
-        "message": "Demo ticket saved. No payment taken.",
+        "number": number_key,
+        "message": "Demo ticket saved. This number is now reserved for this game only.",
         "mode": "DEMO",
         "payments_enabled": False,
     }
-
 
 @app.get("/api/my-tickets")
 async def my_tickets(request: Request):
