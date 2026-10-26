@@ -470,12 +470,21 @@ async def demo_ticket(body: TicketInput, request: Request):
     # the same six-digit number in the same game.
     with connect_db() as conn:
         conn.execute("BEGIN IMMEDIATE")
-        existing = conn.execute("""
-            SELECT ticket_id FROM demo_tickets
-            WHERE game_id = ? AND digits_json = ?
-            LIMIT 1
-        """, (body.game_id, digits_json)).fetchone()
-        if existing:
+        existing_rows = conn.execute("""
+            SELECT ticket_id, digits_json FROM demo_tickets
+            WHERE game_id = ?
+        """, (body.game_id,)).fetchall()
+        requested_digits = tuple(body.digits)
+        duplicate = False
+        for row in existing_rows:
+            try:
+                saved_digits = tuple(json.loads(row["digits_json"]))
+            except (ValueError, TypeError, json.JSONDecodeError):
+                continue
+            if saved_digits == requested_digits:
+                duplicate = True
+                break
+        if duplicate:
             raise HTTPException(
                 409, "That six-digit number is already taken for this game. Choose another number."
             )
