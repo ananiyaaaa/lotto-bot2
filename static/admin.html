@@ -8,7 +8,7 @@
 <section class="panel"><h2>Demo withdrawal requests</h2><p>Simulation only: reviewing these requests does not transfer money.</p><div style="margin-bottom:10px"><button class="secondary" onclick="loadWithdrawals()">Refresh withdrawal queue</button></div><div class="tablewrap"><table><thead><tr><th>Submitted</th><th>Player</th><th>Method / Amount</th><th>Account details</th><th>Status</th><th>Review</th></tr></thead><tbody id="withdrawRows"><tr><td colspan="6">Enter admin token to load requests.</td></tr></tbody></table></div></section>
 </main><script>
 let adminToken=sessionStorage.getItem('elsAdminToken')||'';document.getElementById('token').value=adminToken;
-function saveToken(){adminToken=document.getElementById('token').value.trim();if(adminToken)sessionStorage.setItem('elsAdminToken',adminToken);else sessionStorage.removeItem('elsAdminToken');loadPayments()}
+function saveToken(){adminToken=document.getElementById('token').value.trim();if(adminToken)sessionStorage.setItem('elsAdminToken',adminToken);else sessionStorage.removeItem('elsAdminToken');loadPayments();loadWithdrawals()}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function showMsg(s){document.getElementById('msg').textContent=s}
 async function call(path,options={}){const r=await fetch(path,{...options,headers:{'Content-Type':'application/json','X-Admin-Token':adminToken,...(options.headers||{})}});let d={};try{d=await r.json()}catch(e){}if(!r.ok)throw new Error(d.detail||`Request failed (${r.status})`);return d}
