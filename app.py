@@ -465,7 +465,20 @@ async def demo_ticket(body: TicketInput, request: Request):
         )
 
     ticket_id = "DEMO-" + secrets.token_hex(4).upper()
+    digits_json = json.dumps(body.digits, separators=(",", ":"))
+    # Serialize number reservation so two simultaneous requests cannot claim
+    # the same six-digit number in the same game.
     with connect_db() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        existing = conn.execute("""
+            SELECT ticket_id FROM demo_tickets
+            WHERE game_id = ? AND digits_json = ?
+            LIMIT 1
+        """, (body.game_id, digits_json)).fetchone()
+        if existing:
+            raise HTTPException(
+                409, "That six-digit number is already taken for this game. Choose another number."
+            )
         conn.execute("""
             INSERT INTO demo_tickets
                 (ticket_id, telegram_id, game_id, digits_json, created_at)
@@ -474,7 +487,7 @@ async def demo_ticket(body: TicketInput, request: Request):
             ticket_id,
             player["telegram_id"],
             body.game_id,
-            json.dumps(body.digits),
+            digits_json,
             int(time.time()),
         ))
 
@@ -485,6 +498,35 @@ async def demo_ticket(body: TicketInput, request: Request):
         "mode": "DEMO",
         "payments_enabled": False,
     }
+
+
+@app.get("/api/my-tickets")
+async def my_tickets(request: Request):
+    _, player = registered_player(request)
+    with connect_db() as conn:
+        rows = conn.execute("""
+            SELECT ticket_id, game_id, digits_json, created_at
+            FROM demo_tickets
+            WHERE telegram_id = ?
+            ORDER BY created_at DESC
+            LIMIT 500
+        """, (player["telegram_id"],)).fetchall()
+
+    tickets = []
+    for row in rows:
+        try:
+            digits = json.loads(row["digits_json"])
+            digits_text = "".join(str(int(d)) for d in digits)
+        except (ValueError, TypeError, json.JSONDecodeError):
+            continue
+        tickets.append({
+            "ticket_id": row["ticket_id"],
+            "game_id": row["game_id"],
+            "digits": digits_text,
+            "created_at": row["created_at"],
+            "server_saved": True,
+        })
+    return {"ok": True, "tickets": tickets, "mode": "DEMO", "payments_enabled": False}
 
 
 class DemoPaymentInput(BaseModel):
