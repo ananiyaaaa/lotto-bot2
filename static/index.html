@@ -103,10 +103,10 @@
   </div>
   <div class="panel">
    <div class="eyebrow">Withdraw funds • simulation</div><h2>Withdrawal request</h2>
-   <p class="sub">Test the request and review flow. This does not send money to an account.</p>
+   <p class="sub">Test the request and review flow. This does not send money to an account.</p><div class="notice">Use fictional test details only. Do not enter a real bank account, wallet number, password, or PIN.</div>
    <label class="field"><span>METHOD</span><select id="withdrawMethod" class="fieldInput"><option value="telebirr">Telebirr (simulation)</option><option value="cbe">CBE (simulation)</option></select></label>
-   <label class="field"><span>ACCOUNT HOLDER NAME</span><input id="withdrawName" maxlength="100" placeholder="Name on account" autocomplete="off"></label>
-   <label class="field"><span>ACCOUNT / WALLET NUMBER</span><input id="withdrawAccount" maxlength="40" placeholder="Test account number" autocomplete="off"></label>
+   <label class="field"><span>ACCOUNT HOLDER NAME</span><input id="withdrawName" maxlength="100" placeholder="TEST USER" autocomplete="off"></label>
+   <label class="field"><span>ACCOUNT / WALLET NUMBER</span><input id="withdrawAccount" maxlength="40" placeholder="TEST-ACCOUNT-1234" autocomplete="off"></label>
    <label class="field"><span>DEMO AMOUNT (BIRR)</span><input id="withdrawAmount" type="number" min="1" max="1000000" value="100" inputmode="numeric"></label>
    <button class="btn secondary full" onclick="submitDemoWithdrawal()">Submit demo withdrawal request</button>
    <div id="withdrawMessage" class="message" role="status"></div>
