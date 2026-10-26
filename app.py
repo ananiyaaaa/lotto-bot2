@@ -100,6 +100,22 @@ def initialize_db():
             )
         """)
 
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS demo_withdrawal_requests (
+                withdrawal_id TEXT PRIMARY KEY,
+                telegram_id TEXT NOT NULL,
+                method TEXT NOT NULL,
+                account_name TEXT NOT NULL,
+                account_number TEXT NOT NULL,
+                amount_birr INTEGER NOT NULL,
+                status TEXT NOT NULL DEFAULT 'PENDING',
+                created_at INTEGER NOT NULL,
+                reviewed_at INTEGER,
+                admin_note TEXT NOT NULL DEFAULT '',
+                FOREIGN KEY (telegram_id) REFERENCES players(telegram_id)
+            )
+        """)
+
         # Safe migrations for existing SQLite databases.
         existing = {
             row["name"] for row in
@@ -550,6 +566,13 @@ class DemoPaymentReviewInput(BaseModel):
     note: str = Field(default="", max_length=300)
 
 
+class DemoWithdrawalInput(BaseModel):
+    method: str = Field(pattern=r"^(telebirr|cbe)$")
+    account_name: str = Field(min_length=2, max_length=100)
+    account_number: str = Field(min_length=3, max_length=40, pattern=r"^[A-Za-z0-9+._/-]+$")
+    amount_birr: int = Field(gt=0, le=1000000)
+
+
 def require_admin(request: Request):
     if not ADMIN_TOKEN:
         raise HTTPException(503, "ADMIN_TOKEN is not configured in Render.")
@@ -593,6 +616,90 @@ async def my_demo_payments(request: Request):
             ORDER BY created_at DESC LIMIT 50
         """, (player["telegram_id"],)).fetchall()
     return {"ok": True, "payments": [dict(row) for row in rows],
+            "mode": "DEMO", "payments_enabled": False}
+
+
+@app.post("/api/demo-withdrawals")
+async def create_demo_withdrawal(body: DemoWithdrawalInput, request: Request):
+    # Demo request queue only: this endpoint never transfers or reserves real money.
+    _, player = registered_player(request)
+    withdrawal_id = "DEMO-WD-" + secrets.token_hex(5).upper()
+    with connect_db() as conn:
+        conn.execute("""
+            INSERT INTO demo_withdrawal_requests
+            (withdrawal_id, telegram_id, method, account_name, account_number,
+             amount_birr, status, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, 'PENDING', ?)
+        """, (
+            withdrawal_id, player["telegram_id"], body.method,
+            body.account_name.strip()[:100], body.account_number.strip()[:40],
+            body.amount_birr, int(time.time())
+        ))
+    return {
+        "ok": True,
+        "withdrawal_id": withdrawal_id,
+        "status": "PENDING",
+        "message": "Demo withdrawal request saved for review. No funds are held or transferred.",
+        "mode": "DEMO",
+        "payments_enabled": False,
+    }
+
+
+@app.get("/api/my-demo-withdrawals")
+async def my_demo_withdrawals(request: Request):
+    _, player = registered_player(request)
+    with connect_db() as conn:
+        rows = conn.execute("""
+            SELECT withdrawal_id, method, account_name, account_number,
+                   amount_birr, status, created_at, reviewed_at, admin_note
+            FROM demo_withdrawal_requests
+            WHERE telegram_id = ?
+            ORDER BY created_at DESC LIMIT 50
+        """, (player["telegram_id"],)).fetchall()
+    return {"ok": True, "withdrawals": [dict(row) for row in rows],
+            "mode": "DEMO", "payments_enabled": False}
+
+
+@app.get("/api/admin/demo-withdrawals")
+async def admin_list_demo_withdrawals(request: Request):
+    require_admin(request)
+    with connect_db() as conn:
+        rows = conn.execute("""
+            SELECT w.withdrawal_id, w.telegram_id, w.method, w.account_name,
+                   w.account_number, w.amount_birr, w.status, w.created_at,
+                   w.reviewed_at, w.admin_note,
+                   COALESCE(NULLIF(u.display_name, ''), u.first_name, 'Player') AS player_name
+            FROM demo_withdrawal_requests w
+            LEFT JOIN players u ON u.telegram_id = w.telegram_id
+            ORDER BY CASE w.status WHEN 'PENDING' THEN 0 ELSE 1 END,
+                     w.created_at DESC LIMIT 500
+        """).fetchall()
+    return {"ok": True, "withdrawals": [dict(row) for row in rows],
+            "mode": "DEMO", "payments_enabled": False}
+
+
+@app.post("/api/admin/demo-withdrawals/{withdrawal_id}/review")
+async def admin_review_demo_withdrawal(withdrawal_id: str,
+                                       body: DemoPaymentReviewInput,
+                                       request: Request):
+    require_admin(request)
+    decision = "APPROVED_DEMO" if body.decision == "approve" else "REJECTED_DEMO"
+    with connect_db() as conn:
+        row = conn.execute(
+            "SELECT withdrawal_id, status FROM demo_withdrawal_requests WHERE withdrawal_id = ?",
+            (withdrawal_id,)
+        ).fetchone()
+        if not row:
+            raise HTTPException(404, "Demo withdrawal request not found.")
+        if row["status"] != "PENDING":
+            raise HTTPException(409, "This withdrawal request has already been reviewed.")
+        conn.execute("""
+            UPDATE demo_withdrawal_requests
+            SET status = ?, reviewed_at = ?, admin_note = ?
+            WHERE withdrawal_id = ? AND status = 'PENDING'
+        """, (decision, int(time.time()), body.note.strip(), withdrawal_id))
+    return {"ok": True, "withdrawal_id": withdrawal_id, "status": decision,
+            "message": "Demo request status updated only. No funds were transferred.",
             "mode": "DEMO", "payments_enabled": False}
 
 
