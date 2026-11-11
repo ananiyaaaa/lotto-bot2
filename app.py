@@ -835,7 +835,7 @@ async def telegram_webhook(request: Request):
                     [{"text": "▶️ Start"}, {"text": "🎰 Play"}],
                     [{"text": "💳 Deposit"}, {"text": "💰 Balance"}],
                     [{"text": "🏧 Withdraw"}, {"text": "👥 Invite"}],
-                    [{"text": "📖 Instructions"}, {"text": "🆘 Support"}],
+                    [{"text": "🃏 Card Games"}, {"text": "📖 Instructions"}, {"text": "🆘 Support"}],
                 ],
                 "resize_keyboard": True,
                 "is_persistent": True,
@@ -850,6 +850,15 @@ async def telegram_webhook(request: Request):
                     "web_app": {"url": WEB_APP_URL}
                 }]]
             }
+        })
+    elif text == "🃏 Card Games":
+        await telegram_call("sendMessage", {
+            "chat_id": chat_id,
+            "text": "Welcome to Card Arena. Crazy Eights is available in free-play mode.",
+            "reply_markup": {"inline_keyboard": [[{
+                "text": "🃏 Open Card Arena",
+                "web_app": {"url": WEB_APP_URL + "/cards"}
+            }]]}
         })
     elif text in {"▶️ Start", "🎰 Play"}:
         await telegram_call("sendMessage", {
