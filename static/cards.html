@@ -8,7 +8,7 @@
 <main>
 <section id="lobby" class="panel"><h2>Crazy Eights</h2><p class="muted">Match the suit or rank. Play an 8 to choose a new suit. First player to empty their hand wins.</p>
 <div class="row"><button class="btn" id="create">Create a table</button><input id="roomcode" maxlength="6" placeholder="Room code"><button class="btn alt" id="join">Join table</button></div>
-<p class="notice">Create a room and share its code with a friend. A table starts when at least two players have joined. Up to four players.</p><div id="lobbymsg" class="status"></div></section>
+<p class="notice">Create a room and share its code with a friend. A table starts when at least two players have joined. Two players per table in this first version.</p><div id="lobbymsg" class="status"></div></section>
 <section id="game" class="hidden">
 <div class="panel row" style="justify-content:space-between"><div><small>ROOM CODE</small><div class="code" id="code"></div></div><div><small>GAME STATUS</small><div id="gamestatus">Waiting for players</div></div><button class="btn alt" id="copy">Copy code</button></div>
 <div class="table"><div id="players" class="players"></div><div class="center"><div class="pile"><div class="card back" id="drawpile"><span>♠</span><span class="pip">?</span><span>♣</span></div><small>Draw</small></div><div class="pile"><div id="topcard" class="card"></div><small>Discard</small></div></div><div class="status" id="turnmsg"></div></div>
