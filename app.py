@@ -894,3 +894,189 @@ async def telegram_webhook(request: Request):
 
 
     return {"ok": True}
+
+
+# ---------------- Card Arena: Crazy Eights (free-play prototype) ----------------
+# Rooms are isolated from lottery tables/tickets. Real-money features are not present.
+import threading
+CARD_ROOMS = {}
+CARD_ROOMS_LOCK = threading.RLock()
+CARD_SUITS = ["♠", "♥", "♦", "♣"]
+CARD_RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"]
+
+
+def _card_deck():
+    cards = [{"id": f"{rank}-{suit}", "rank": rank, "suit": suit}
+             for suit in CARD_SUITS for rank in CARD_RANKS]
+    secrets.SystemRandom().shuffle(cards)
+    return cards
+
+
+def _start_card_room(room):
+    deck = _card_deck()
+    for player in room["players"]:
+        player["hand"] = [deck.pop() for _ in range(7)]
+    first = deck.pop()
+    while first["rank"] == "8":
+        deck.insert(0, first)
+        first = deck.pop()
+    room["draw_pile"] = deck
+    room["discard_pile"] = [first]
+    room["current"] = 0
+    room["status"] = "playing"
+    room["has_drawn"] = False
+    room["winner"] = None
+
+
+def _card_player(request):
+    user, player = registered_player(request)
+    return str(user["id"]), (player.get("display_name") or player.get("first_name") or "Player")[:32]
+
+
+def _card_room_or_404(code):
+    room = CARD_ROOMS.get(code)
+    if not room:
+        raise HTTPException(404, "Room not found. Ask the host for a current room code.")
+    return room
+
+
+def _card_public_state(room, telegram_id):
+    seat = next((i for i, p in enumerate(room["players"]) if p["telegram_id"] == telegram_id), None)
+    if seat is None:
+        raise HTTPException(403, "You are not a member of this room.")
+    current = room["current"]
+    return {
+        "room_code": room["code"],
+        "status": room["status"],
+        "players": [{"seat": i, "name": p["name"], "card_count": len(p.get("hand", []))}
+                    for i, p in enumerate(room["players"])],
+        "hand": room["players"][seat].get("hand", []),
+        "top_card": room["discard_pile"][-1] if room.get("discard_pile") else None,
+        "your_turn": room["status"] == "playing" and current == seat,
+        "current_player": current,
+        "current_name": room["players"][current]["name"] if room["players"] else "",
+        "has_drawn": room.get("has_drawn", False) if current == seat else False,
+        "winner": room.get("winner"),
+    }
+
+
+@app.get("/cards", include_in_schema=False)
+async def card_arena_page():
+    card_file = STATIC_DIR / "cards.html"
+    if not card_file.is_file():
+        raise HTTPException(404, "Card Arena page missing: static/cards.html")
+    return FileResponse(str(card_file))
+
+
+@app.post("/api/cards/rooms")
+async def card_create_room(request: Request):
+    telegram_id, name = _card_player(request)
+    with CARD_ROOMS_LOCK:
+        code = secrets.token_hex(3).upper()
+        while code in CARD_ROOMS:
+            code = secrets.token_hex(3).upper()
+        CARD_ROOMS[code] = {
+            "code": code, "status": "waiting", "players": [
+                {"telegram_id": telegram_id, "name": name, "hand": []}
+            ], "draw_pile": [], "discard_pile": [], "current": 0,
+            "has_drawn": False, "winner": None,
+        }
+    return {"ok": True, "room_code": code, "status": "waiting", "mode": "FREE_PLAY"}
+
+
+@app.post("/api/cards/rooms/{code}/join")
+async def card_join_room(code: str, request: Request):
+    telegram_id, name = _card_player(request)
+    code = code.upper()
+    with CARD_ROOMS_LOCK:
+        room = _card_room_or_404(code)
+        existing = next((p for p in room["players"] if p["telegram_id"] == telegram_id), None)
+        if existing:
+            return {"ok": True, "room_code": code, "status": room["status"]}
+        if room["status"] != "waiting":
+            raise HTTPException(409, "This game has already started.")
+        if len(room["players"]) >= 4:
+            raise HTTPException(409, "This table is full (maximum four players).")
+        room["players"].append({"telegram_id": telegram_id, "name": name, "hand": []})
+        if len(room["players"]) >= 2:
+            _start_card_room(room)
+    return {"ok": True, "room_code": code, "status": room["status"]}
+
+
+@app.get("/api/cards/rooms/{code}")
+async def card_room_state(code: str, request: Request):
+    telegram_id, _ = _card_player(request)
+    with CARD_ROOMS_LOCK:
+        room = _card_room_or_404(code.upper())
+        return _card_public_state(room, telegram_id)
+
+
+@app.post("/api/cards/rooms/{code}/play")
+async def card_play(code: str, body: dict, request: Request):
+    telegram_id, _ = _card_player(request)
+    card_id = str(body.get("card_id", ""))
+    chosen_suit = body.get("chosen_suit")
+    with CARD_ROOMS_LOCK:
+        room = _card_room_or_404(code.upper())
+        if room["status"] != "playing":
+            raise HTTPException(409, "This game is not in progress.")
+        seat = next((i for i, p in enumerate(room["players"]) if p["telegram_id"] == telegram_id), None)
+        if seat is None:
+            raise HTTPException(403, "You are not a member of this room.")
+        if room["current"] != seat:
+            raise HTTPException(409, "It is not your turn.")
+        hand = room["players"][seat]["hand"]
+        card = next((c for c in hand if c["id"] == card_id), None)
+        if not card:
+            raise HTTPException(404, "That card is not in your hand.")
+        top = room["discard_pile"][-1]
+        if card["rank"] != "8" and card["suit"] != top["suit"] and card["rank"] != top["rank"]:
+            raise HTTPException(422, "Play a matching suit, matching rank, or an 8.")
+        if card["rank"] == "8" and chosen_suit not in CARD_SUITS:
+            raise HTTPException(422, "Choose a suit when playing an 8.")
+        hand.remove(card)
+        played = dict(card)
+        if card["rank"] == "8":
+            played["suit"] = chosen_suit
+        room["discard_pile"].append(played)
+        room["has_drawn"] = False
+        if not hand:
+            room["status"] = "finished"
+            room["winner"] = room["players"][seat]["name"]
+        else:
+            room["current"] = (seat + 1) % len(room["players"])
+    return {"ok": True, "status": room["status"], "winner": room["winner"]}
+
+
+@app.post("/api/cards/rooms/{code}/draw")
+async def card_draw(code: str, request: Request):
+    telegram_id, _ = _card_player(request)
+    with CARD_ROOMS_LOCK:
+        room = _card_room_or_404(code.upper())
+        if room["status"] != "playing":
+            raise HTTPException(409, "This game is not in progress.")
+        seat = next((i for i, p in enumerate(room["players"]) if p["telegram_id"] == telegram_id), None)
+        if seat is None:
+            raise HTTPException(403, "You are not a member of this room.")
+        if room["current"] != seat:
+            raise HTTPException(409, "It is not your turn.")
+        if room["has_drawn"]:
+            raise HTTPException(409, "You have already drawn this turn.")
+        if not room["draw_pile"]:
+            if len(room["discard_pile"]) <= 1:
+                raise HTTPException(409, "No cards remain to draw.")
+            top = room["discard_pile"].pop()
+            refill = room["discard_pile"]
+            secrets.SystemRandom().shuffle(refill)
+            room["draw_pile"] = refill
+            room["discard_pile"] = [top]
+        drawn = room["draw_pile"].pop()
+        room["players"][seat]["hand"].append(drawn)
+        top = room["discard_pile"][-1]
+        playable = drawn["rank"] == "8" or drawn["rank"] == top["rank"] or drawn["suit"] == top["suit"]
+        if not playable:
+            room["current"] = (seat + 1) % len(room["players"])
+            room["has_drawn"] = False
+            return {"ok": True, "drawn": 1, "turn_passed": True}
+        room["has_drawn"] = True
+    return {"ok": True, "drawn": 1, "turn_passed": False}
